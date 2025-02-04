@@ -106,3 +106,9 @@
   .selected {
     background-color: rgba(0,0,0,.10);
   }
+  .event {
+    margin: 2px 0;
+    padding: 2px 5px;
+    font-size: 0.9em;
+    color: #333;
+}

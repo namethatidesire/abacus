@@ -3,15 +3,16 @@ import CalendarDays from './calendar-days';
 import './style.css'
 
 export default class Calendar extends Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
 
         this.weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         this.months = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
 
         this.state = {
-        currentDay: new Date()
+            currentDay: new Date(),
+            events: {} 
         }
     }
 
@@ -28,6 +29,22 @@ export default class Calendar extends Component {
     // Function to change the current day
     previousDay = () => {
         this.setState({ currentDay: new Date(this.state.currentDay.setDate(this.state.currentDay.getDate() - 1)) });
+    }
+
+    // Function to create an event
+    createEvent = (day) => {
+        const eventTitle = prompt("Enter event title:");
+        if (eventTitle) {
+            this.setState((prevState) => {
+                const events = { ...prevState.events };
+                const dateKey = day.date.toDateString();
+                if (!events[dateKey]) {
+                    events[dateKey] = [];
+                }
+                events[dateKey].push(eventTitle);
+                return { events };
+            });
+        }
     }
 
     render() {
@@ -76,9 +93,10 @@ export default class Calendar extends Component {
 
                 {/* Render each day */}
                 {/* Day is passed on as the current day, change current day is the changing current day function */}
-                <CalendarDays day={this.state.currentDay} changeCurrentDay={this.changeCurrentDay} />
+                <CalendarDays day={this.state.currentDay} changeCurrentDay={this.changeCurrentDay} createEvent={this.createEvent} events={this.state.events} />
             </div>
         </div>
         )
     }
 }
+

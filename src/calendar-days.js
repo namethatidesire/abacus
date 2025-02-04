@@ -1,3 +1,4 @@
+import React from 'react';
 function CalendarDays(props) {
     const firstDayOfMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 1);
     const weekdayOfFirstDay = firstDayOfMonth.getDay();
@@ -31,10 +32,17 @@ function CalendarDays(props) {
             {
                 // Creates the calendar days and maps them to the currentDays array
                 currentDays.map((day) => {
+                    const dateKey = day.date.toDateString();
+                    const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
                     return (
                         <div className={"calendar-day" + (day.currentMonth ? " current" : "") + (day.selected ? " selected" : "")}
-                                onClick={() => props.changeCurrentDay(day)}>
+                            onClick={() => props.createEvent(day)}>
                             <p>{day.number}</p>
+                            {dayEvents.map((event, index) => (
+                                <p key={index} className="event">
+                                    {event}
+                                </p>
+                            ))}
                         </div>
                     )
                 })
