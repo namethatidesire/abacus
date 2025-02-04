@@ -1,9 +1,10 @@
 import React from 'react';
+
 function CalendarDays(props) {
     const firstDayOfMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 1);
     const weekdayOfFirstDay = firstDayOfMonth.getDay();
     let currentDays = [];
-  
+
     for (let day = 0; day < 42; day++) {
         if (day === 0 && weekdayOfFirstDay === 0) {
             firstDayOfMonth.setDate(firstDayOfMonth.getDate() - 7);
@@ -12,7 +13,7 @@ function CalendarDays(props) {
         } else {
             firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
         }
-  
+
         // Create the calendar day object
         let calendarDay = {
             currentMonth: (firstDayOfMonth.getMonth() === props.day.getMonth()),
@@ -22,10 +23,10 @@ function CalendarDays(props) {
             selected: (firstDayOfMonth.toDateString() === props.day.toDateString()),
             year: firstDayOfMonth.getFullYear()
         }
-  
+
         currentDays.push(calendarDay);
     }
-  
+
     return (
         // The rendered calendar days
         <div className="table-content">
@@ -39,8 +40,8 @@ function CalendarDays(props) {
                              onClick={() => props.createEvent(day)}>
                             <p>{day.number}</p>
                             {dayEvents.map((event, eventIndex) => (
-                                <p key={eventIndex} className="event">
-                                    {event}
+                                <p key={eventIndex} className="event" style={{ backgroundColor: event.color }}>
+                                    {event.title}
                                 </p>
                             ))}
                         </div>
@@ -49,6 +50,6 @@ function CalendarDays(props) {
             }
         </div>
     )
-  }
-  
-  export default CalendarDays;
+}
+
+export default CalendarDays;

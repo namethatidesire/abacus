@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import CalendarDays from './calendar-days';
-import './style.css'
+import './style.css';
 
 export default class Calendar extends Component {
     constructor(props) {
@@ -34,14 +34,15 @@ export default class Calendar extends Component {
     // Function to create an event
     createEvent = (day) => {
         const eventTitle = prompt("Enter event title:");
-        if (eventTitle) {
+        const eventColor = prompt("Enter event color (e.g., red, blue, green):");
+        if (eventTitle && eventColor) {
             this.setState((prevState) => {
                 const events = { ...prevState.events };
                 const dateKey = day.date.toDateString();
                 if (!events[dateKey]) {
                     events[dateKey] = [];
                 }
-                events[dateKey].push(eventTitle);
+                events[dateKey].push({ title: eventTitle, color: eventColor });
                 return { events };
             });
         }
@@ -49,54 +50,46 @@ export default class Calendar extends Component {
 
     render() {
         return (
-        <div className="calendar">
-
-            {/* Calendar Header*/}
-            <div className="calendar-header">
-
+            <div className="calendar">
+                {/* Calendar Header */}
+                <div className="calendar-header">
                     {/* Current Month and Year */}
                     <div className="title">
                         <h2>{this.months[this.state.currentDay.getMonth()]} {this.state.currentDay.getFullYear()}</h2>
                     </div>
 
                     <div className="tools">
+                        {/* Back arrow icon */}
+                        <button onClick={this.previousDay}>
+                            <span className="material-icons">arrow_back</span>
+                        </button>
 
-                    {/* Back arrow icon */}
-                    <button onClick={this.previousDay}>
-                    <span className="material-icons">
-                        arrow_back
-                        </span>
-                    </button>
+                        {/* Current date selected */}
+                        <p>{this.months[this.state.currentDay.getMonth()].substring(0, 3)} {this.state.currentDay.getDate()}</p>
 
-                    {/* Current date selected */}
-                    <p>{this.months[this.state.currentDay.getMonth()].substring(0, 3)} {this.state.currentDay.getDate()}</p>
-                    
-                    {/* Forward arrow icon */}
-                    <button onClick={this.nextDay}>
-                    <span className="material-icons">
-                        arrow_forward
-                        </span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Calendar Body */}
-            <div className="calendar-body">
-                {/* Day label */}
-                <div className="table-header">
-                    {
-                    this.weekdays.map((weekday, index) => {
-                        return <div key={index} className="weekday"><p>{weekday}</p></div>
-                    })
-                    }
+                        {/* Forward arrow icon */}
+                        <button onClick={this.nextDay}>
+                            <span className="material-icons">arrow_forward</span>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Render each day */}
-                {/* Day is passed on as the current day, change current day is the changing current day function */}
-                <CalendarDays day={this.state.currentDay} changeCurrentDay={this.changeCurrentDay} createEvent={this.createEvent} events={this.state.events} />
+                {/* Calendar Body */}
+                <div className="calendar-body">
+                    {/* Day label */}
+                    <div className="table-header">
+                        {
+                        this.weekdays.map((weekday, index) => {
+                            return <div key={index} className="weekday"><p>{weekday}</p></div>
+                        })
+                        }
+                    </div>
+
+                    {/* Render each day */}
+                    {/* Day is passed on as the current day, change current day is the changing current day function */}
+                    <CalendarDays day={this.state.currentDay} changeCurrentDay={this.changeCurrentDay} createEvent={this.createEvent} events={this.state.events} />
+                </div>
             </div>
-        </div>
         )
     }
 }
-
