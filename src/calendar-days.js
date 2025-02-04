@@ -31,15 +31,15 @@ function CalendarDays(props) {
         <div className="table-content">
             {
                 // Creates the calendar days and maps them to the currentDays array
-                currentDays.map((day) => {
+                currentDays.map((day, index) => {
                     const dateKey = day.date.toDateString();
                     const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
                     return (
-                        <div className={"calendar-day" + (day.currentMonth ? " current" : "") + (day.selected ? " selected" : "")}
-                            onClick={() => props.createEvent(day)}>
+                        <div key={index} className={"calendar-day" + (day.currentMonth ? " current" : "") + (day.selected ? " selected" : "")}
+                             onClick={() => props.createEvent(day)}>
                             <p>{day.number}</p>
-                            {dayEvents.map((event, index) => (
-                                <p key={index} className="event">
+                            {dayEvents.map((event, eventIndex) => (
+                                <p key={eventIndex} className="event">
                                     {event}
                                 </p>
                             ))}
