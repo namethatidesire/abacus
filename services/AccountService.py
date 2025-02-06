@@ -82,6 +82,12 @@ class AccountHandler(BaseHTTPRequestHandler):
         self.config = ServiceConfig()
         super().__init__(*args, **kwargs)
     
+    def _set_cors_headers(self):
+        """Sets CORS headers for preflight and actual requests."""
+        self.send_header('Access-Control-Allow-Origin', '*')  # Allow all origins (Change * to a specific domain if needed)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    
     def _read_body(self):
         """
         Reads the body of the HTTP request.
@@ -92,7 +98,12 @@ class AccountHandler(BaseHTTPRequestHandler):
 
         content_length = int(self.headers.get('Content-Length', 0))
         return self.rfile.read(content_length).decode('utf-8')
-    
+
+    def do_OPTIONS(self):
+        """Handles preflight requests."""
+        self.send_response(200)
+        self._set_cors_headers()
+        self.end_headers()
     
     def do_GET(self):
         """
@@ -103,7 +114,13 @@ class AccountHandler(BaseHTTPRequestHandler):
         response, code = "", -1
         
         if path.startswith('/username/'):
-            response, code = self.get_users(path[10:], self.database)
+            
+            username = path[10:]
+
+            if not username:
+                username = ""
+
+            response, code = self.get_users(username, self.database)
 
         elif path.startswith('/account/'):
             response, code = self.get_account(path[9:], self.database)
@@ -219,6 +236,10 @@ class AccountHandler(BaseHTTPRequestHandler):
                     "email": user[2],
                 }
                 response = (json.dumps(user_data), 200)
+
+            elif not user:
+                response = self.GET_all(database)
+
             else:
                 response = (json.dumps({"error": "Account not found"}), 404)
 
@@ -257,6 +278,31 @@ class AccountHandler(BaseHTTPRequestHandler):
             conn.close()
         
         return response
+    
+
+    def GET_all(self, database):
+        """
+        Retrieves all user data from the Database when no specific username is provided.
+        """
+        path = urlparse(self.path).path
+        response = ("", -1)
+        conn = sqlite3.connect(database)
+        cursor = conn.cursor()
+
+        try:
+            if path == "/username/":  # No specific username provided
+                # Retrieve all user data from the users table
+                cursor.execute("SELECT id, username, email FROM users")
+                users = cursor.fetchall()
+                
+                users_data = [{"id": row[0], "username": row[1], "email": row[2]} for row in users]
+                response= (json.dumps(users_data), 200)
+
+            # Send response back to the client
+            return response
+
+        except sqlite3.Error as e:
+            response = (json.dumps({"error": str(e)}), 500)
 
 
 if __name__ == "__main__":
