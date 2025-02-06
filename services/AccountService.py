@@ -4,8 +4,6 @@ import json
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import requests
-import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
