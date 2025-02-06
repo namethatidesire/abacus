@@ -36,7 +36,8 @@ def run_server(host="localhost", port=8080, database="databases/accounts.db"):
         host (str): The host IP address. Defaults to "localhost".
         port (int): The port number. Defaults to 8080.
     """
-    server = HTTPServer((host, port), AccountHandler)
+    config = ServiceConfig()
+    server = HTTPServer((config.host, config.port), AccountHandler)
     logger.info(f"Starting AccountService on {host}:{port}")
 
     create_database(database)
