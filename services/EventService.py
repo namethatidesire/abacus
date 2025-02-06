@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_database(database):
+    os.makedirs("databases", exist_ok=True)
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
     
