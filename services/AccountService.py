@@ -93,18 +93,6 @@ class AccountHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get('Content-Length', 0))
         return self.rfile.read(content_length).decode('utf-8')
     
-    def _forward_request(self, service_type, path):
-        """
-        Forwards the HTTP request to the appropriate service.
-
-        Parameters:
-            service_type (str): The type of service ("user" or "product").
-            path (str): The path of the request.
-
-        Raises:
-            Exception: If there is an error forwarding the request.
-        """
-        return
     
     def do_GET(self):
         """
@@ -116,6 +104,10 @@ class AccountHandler(BaseHTTPRequestHandler):
         
         if path.startswith('/username/'):
             response, code = self.get_users(path[10:], self.database)
+
+        elif path.startswith('/account/'):
+            response, code = self.get_account(path[9:], self.database)
+            
         else:
             response, code = "Invalid path", 404
 
@@ -139,6 +131,9 @@ class AccountHandler(BaseHTTPRequestHandler):
             
             if(body['command'] == 'authenticate'):
                 response, code = self.authenticate_user(body['username'], body['password'], self.database)
+            
+            if(body['command'] == 'delete'):
+                response, code = self.delete_user(body['username'], body['password'], self.database)
 
              # Send response back
             self.send_response(code)
@@ -214,17 +209,18 @@ class AccountHandler(BaseHTTPRequestHandler):
 
         try:
             # Retrieve user details, excluding password_hash
-            cursor.execute("SELECT username, email FROM users WHERE username = ?", (username,))
+            cursor.execute("SELECT id, username, email FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
 
             if user:
                 user_data = {
-                    "username": user[0],
-                    "email": user[1]
+                    "id": user[0],
+                    "username": user[1],
+                    "email": user[2],
                 }
                 response = (json.dumps(user_data), 200)
             else:
-                response = (json.dumps({"error": "User not found"}), 404)
+                response = (json.dumps({"error": "Account not found"}), 404)
 
         except sqlite3.Error as e:
             response = (json.dumps({"error": f"Database error: {e}"}), 500)
@@ -232,6 +228,34 @@ class AccountHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
+        return response
+    
+    def get_account(self, id, database):
+        # make a connection to the database
+        conn = sqlite3.connect(database)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT id, username, email FROM users WHERE id = ?", (id,))
+            account = cursor.fetchone()
+
+            if account:
+                account_data = {
+                    "id": account[0],
+                    "username": account[1],
+                    "email": account[2],
+                }
+                # save a response code and data 
+                response = (json.dumps(account_data), 200)
+            else:
+                response = (json.dumps({"error": "Account not found"}), 404)
+
+        except sqlite3.Error as e:
+            response = (json.dumps({"error": f"Database error: {e}"}), 500)
+        
+        finally:
+            conn.close()
+        
         return response
 
 
