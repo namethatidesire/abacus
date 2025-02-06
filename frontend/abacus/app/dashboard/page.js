@@ -12,9 +12,11 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const eventsResponse = await fetch(`http://${eventServiceConfig.ip}:${eventServiceConfig.port}/api/dashboard-data`);
+        const getCurrentUser = 'API CALL TO GET LOGGED IN USER'
+        const event_api_path = 'event?name=[username]&date=[today]'; // API path we will use in future
+        const eventsResponse = await fetch(`http://${eventServiceConfig.ip}:${eventServiceConfig.port}/${event_api_path}`);
         const eventData = await eventsResponse.json();
-        setUsername(eventData.username);
+        setUsername(getCurrentUser.username);
         setEvents(eventData.events);
       } catch (error) {
         console.error('Error fetching data:', error);
