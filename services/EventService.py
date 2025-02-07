@@ -30,7 +30,7 @@ def create_database(database):
     conn.commit()
     conn.close()
 
-def run_server(host="localhost", port=8080, database="databases/events.db"):
+def run_server(host="localhost", port=8081, database="databases/events.db"):
     """
     Starts the EventService server.
 
@@ -102,10 +102,10 @@ class EventHandler(BaseHTTPRequestHandler):
         return self.rfile.read(content_length).decode('utf-8')
     
     def do_OPTIONS(self):
-            """Handles preflight requests."""
-            self.send_response(200)
-            self._set_cors_headers()
-            self.end_headers()
+        """Handles preflight requests."""
+        self.send_response(200)
+        self._set_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
         """
@@ -131,6 +131,7 @@ class EventHandler(BaseHTTPRequestHandler):
         # Send response back
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
+        self._set_cors_headers()  # Set CORS headers for GET requests
         self.end_headers()
         self.wfile.write(response.encode('utf-8'))
     
@@ -155,6 +156,7 @@ class EventHandler(BaseHTTPRequestHandler):
             # Send response back
             self.send_response(code)
             self.send_header('Content-Type', 'application/json')
+            self._set_cors_headers()  # Set CORS headers for POST requests
             self.end_headers()
             self.wfile.write(response.encode('utf-8'))
 
@@ -263,7 +265,7 @@ class EventHandler(BaseHTTPRequestHandler):
         
         try:
             cursor.execute("INSERT INTO events (accountId, title, date, time, recurring, color) VALUES (?, ?, ?, ?, ?, ?)",
-                           (body['accountId'], body['title'], body['date'], body.get('time', 'null'), body.get('recurring', 'false'), body.get('color', '#ADD8E6')))
+                           (body['accountId'], body['title'], body['date'], body.get('time', '00:00'), body.get('recurring', 'false'), body.get('color', '#ADD8E6')))
             conn.commit()
             return "Event created successfully!", 200
         except sqlite3.Error as e:
