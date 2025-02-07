@@ -13,7 +13,41 @@ export default class Calendar extends Component {
 
         this.state = {
             currentDay: new Date(),
-            events: {} 
+            events: {},
+            accountId: null
+        }
+    }
+
+    componentDidMount() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountId = urlParams.get('accountId');
+        if (accountId) {
+            this.setState({ accountId: parseInt(accountId, 10) }, this.fetchEvents);
+        }
+    }
+
+    fetchEvents = async () => {
+        const { accountId } = this.state;
+        if (!accountId) return;
+
+        try {
+            const response = await fetch(`http://localhost:8081/account/${accountId}`);
+            if (response.ok) {
+                const data = await response.json();
+                const events = data.events.reduce((acc, event) => {
+                    const dateKey = new Date(event.date.split('-').reverse().join('-')).toDateString();
+                    if (!acc[dateKey]) {
+                        acc[dateKey] = [];
+                    }
+                    acc[dateKey].push(event);
+                    return acc;
+                }, {});
+                this.setState({ events });
+            } else {
+                console.error('Failed to fetch events:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error fetching events:', error);
         }
     }
 
@@ -33,50 +67,53 @@ export default class Calendar extends Component {
     }
 
     // Function to create an event
-    createEvent = (day) => {
+    createEvent = async (day) => {
+        const { accountId } = this.state;
+
+        // Prompt the user for the event title, color, and time
         const eventTitle = prompt("Enter event title:");
-        const eventColor = prompt("Enter event color (e.g., red, blue, green):");
-        if (eventTitle && eventColor) {
-            this.setState((prevState) => {
-                const events = { ...prevState.events };
-                const dateKey = day.date.toDateString();
-                if (!events[dateKey]) {
-                    events[dateKey] = [];
-                }
-                const eventData = {
-                    datekey: dateKey, 
-                    eventTitle: eventTitle,
-                    eventColor: eventColor
-                };
-                
-                // Rather than appending to a list, send the data to the EventService via Post Request
-                fetch('/api/createEvent', {
+        const eventColor = prompt("Enter event color (e.g., #FF0000):");
+        const eventTime = prompt("Enter event time (HH:MM):");
+        if (eventTitle && eventColor && eventTime) {
+            const newEvent = {
+                accountId,
+                title: eventTitle,
+                date: day.date.toISOString().split('T')[0].split('-').reverse().join('-'), // Format date as DD-MM-YYYY
+                time: eventTime,
+                recurring: 'false',
+                color: eventColor
+            };
+
+            try {
+                const response = await fetch('http://localhost:8081/event', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(eventData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to create event')
-                    }
-                    return response.json()
-                })
-                .then(data => {
+                    body: JSON.stringify({ command: 'create', ...newEvent }),
+                });
+
+                if (response.ok) {
+                    // const data = await response.json();
+                    // console.log('Event created:', data);
+                    // Optionally, you can update the local state to reflect the new event
                     this.setState((prevState) => {
-                        alert('Event created successfully!') 
-                    })
-                })
-                
-                // TODO: Maybe this should be removed now? 
-                events[dateKey].push({ title: eventTitle, color: eventColor });
-                // TODO: I honestly don't know if return should stay here because we don't really need to reutnr a list of arrays anymore
-                return { events };
-            });
+                        const events = { ...prevState.events };
+                        const dateKey = new Date(day.date).toDateString();
+                        if (!events[dateKey]) {
+                            events[dateKey] = [];
+                        }
+                        events[dateKey].push(newEvent);
+                        return { events };
+                    });
+                } else {
+                    console.error('Failed to create event');
+                }
+            } catch (error) {
+                console.error('Error creating event:', error);
+            }
         }
-        // TODO: Call a POST request to EventService
-    };
+    }
 
     render() {
         return (
