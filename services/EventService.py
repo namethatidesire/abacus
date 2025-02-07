@@ -1,4 +1,5 @@
 import sqlite3
+import hashlib
 import json
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -83,6 +84,12 @@ class EventHandler(BaseHTTPRequestHandler):
         """
         self.database = "databases/events.db"
         super().__init__(*args, **kwargs)
+
+    def _set_cors_headers(self):
+        """Sets CORS headers for preflight and actual requests."""
+        self.send_header('Access-Control-Allow-Origin', '*')  # Allow all origins (Change * to a specific domain if needed)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     
     def _read_body(self):
         """
@@ -94,6 +101,12 @@ class EventHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get('Content-Length', 0))
         return self.rfile.read(content_length).decode('utf-8')
     
+    def do_OPTIONS(self):
+            """Handles preflight requests."""
+            self.send_response(200)
+            self._set_cors_headers()
+            self.end_headers()
+
     def do_GET(self):
         """
         Handles GET requests and processes them according to the EventService API.
