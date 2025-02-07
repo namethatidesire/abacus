@@ -43,11 +43,40 @@ export default class Calendar extends Component {
                 if (!events[dateKey]) {
                     events[dateKey] = [];
                 }
+                const eventData = {
+                    datekey: dateKey, 
+                    eventTitle: eventTitle,
+                    eventColor: eventColor
+                };
+                
+                // Rather than appending to a list, send the data to the EventService via Post Request
+                fetch('/api/createEvent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(eventData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to create event')
+                    }
+                    return response.json()
+                })
+                .then(data => {
+                    this.setState((prevState) => {
+                        alert('Event created successfully!') 
+                    })
+                })
+                
+                // TODO: Maybe this should be removed now? 
                 events[dateKey].push({ title: eventTitle, color: eventColor });
+                // TODO: I honestly don't know if return should stay here because we don't really need to reutnr a list of arrays anymore
                 return { events };
             });
         }
-    }
+        // TODO: Call a POST request to EventService
+    };
 
     render() {
         return (
