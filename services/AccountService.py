@@ -114,16 +114,13 @@ class AccountHandler(BaseHTTPRequestHandler):
         response, code = "", -1
         
         if path.startswith('/username/'):
-            
-            username = path[10:]
-
-            if not username:
-                username = ""
-
-            response, code = self.get_users(username, self.database)
+            response, code = self.get_users(path[10:], self.database)
 
         elif path.startswith('/account/'):
             response, code = self.get_account(path[9:], self.database)
+
+        elif path.startswith('/users'):
+            response, code = self.get_all_users(self.database)
             
         else:
             response, code = "Invalid path", 404
@@ -131,6 +128,7 @@ class AccountHandler(BaseHTTPRequestHandler):
         # Send response back
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
+        self._set_cors_headers
         self.end_headers()
         self.wfile.write(response.encode('utf-8'))
     
@@ -237,9 +235,6 @@ class AccountHandler(BaseHTTPRequestHandler):
                 }
                 response = (json.dumps(user_data), 200)
 
-            elif not user:
-                response = self.GET_all(database)
-
             else:
                 response = (json.dumps({"error": "Account not found"}), 404)
 
@@ -280,29 +275,27 @@ class AccountHandler(BaseHTTPRequestHandler):
         return response
     
 
-    def GET_all(self, database):
+    def get_all_users(self, database):
         """
         Retrieves all user data from the Database when no specific username is provided.
         """
-        path = urlparse(self.path).path
         response = ("", -1)
         conn = sqlite3.connect(database)
         cursor = conn.cursor()
 
         try:
-            if path == "/username/":  # No specific username provided
-                # Retrieve all user data from the users table
-                cursor.execute("SELECT id, username, email FROM users")
-                users = cursor.fetchall()
-                
-                users_data = [{"id": row[0], "username": row[1], "email": row[2]} for row in users]
-                response= (json.dumps(users_data), 200)
+            # Retrieve all user data from the users table
+            cursor.execute("SELECT id, username, email FROM users")
+            users = cursor.fetchall()
+            
+            users_data = [{"id": row[0], "username": row[1], "email": row[2]} for row in users]
+            response= (json.dumps(users_data), 200)
 
             # Send response back to the client
             return response
 
         except sqlite3.Error as e:
-            response = (json.dumps({"error": str(e)}), 500)
+            response = (json.dumps({"error": f"Database error: str(e)"}), 500)
 
 
 if __name__ == "__main__":
