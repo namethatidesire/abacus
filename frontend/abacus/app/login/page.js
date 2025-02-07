@@ -24,9 +24,16 @@ const LoginPage = () => {
         const data = await response.json();
         console.log(data);
         setMessage(data.message || 'Login successful!');
-        localStorage.setItem('account', JSON.stringify(data.account)); // Store account information in localStorage for other pages to use
-        window.location.href = '/calendar'; // Send the user to the calendar page
-      } else if (response.status === 404) {
+        // localStorage.setItem('account', JSON.stringify(data.account)); // Store account information in localStorage for other pages to use
+
+        // Redirect the user to the calendar page
+        const accountResponse = await fetch(`http://localhost:8080/username/${username}`, {
+          method: 'get',
+        });
+        const accountData = await accountResponse.json();
+        // console.log(accountData.id);
+        window.location.href = `/calendar?accountId=${accountData.id}`; // Send the user to the calendar page
+      } else if (response.status === 403) {
         setMessage('Username or password is invalid.');
       } else {
         const errorData = await response.json();
