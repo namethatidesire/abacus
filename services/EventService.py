@@ -30,7 +30,7 @@ def create_database(database):
     conn.commit()
     conn.close()
 
-def run_server(host="localhost", port=8081, database="databases/events.db"):
+def run_server(host="localhost", port=8081, database="db/events.db"):
     """
     Starts the EventService server.
 
@@ -58,7 +58,7 @@ class ServiceConfig:
         port (int): The port number for the EventService server.
     """
 
-    def __init__(self, config_path="configs\eventservice.json"):
+    def __init__(self, config_path="../configs/accountservice.json"):
         """
         Initializes the ServiceConfig by loading the configuration from the specified JSON file.
 

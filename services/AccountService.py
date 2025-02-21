@@ -25,7 +25,7 @@ def create_database(database):
     conn.commit()
     conn.close()
 
-def run_server(host="localhost", port=8080, database="databases/accounts.db"):
+def run_server(host="localhost", port=8080, database="db/accounts.db"):
     config = ServiceConfig()
     server = HTTPServer((config.host, config.port), AccountHandler)
     logger.info(f"Starting AccountService on {host}:{port}")
@@ -34,7 +34,7 @@ def run_server(host="localhost", port=8080, database="databases/accounts.db"):
     server.serve_forever()
 
 class ServiceConfig:
-    def __init__(self, config_path="configs/accountservice.json"):
+    def __init__(self, config_path="../configs/accountservice.json"):
         with open(config_path, 'r') as f:
             self.config = json.load(f)
         
@@ -43,7 +43,7 @@ class ServiceConfig:
 
 class AccountHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.database = "databases/accounts.db"
+        self.database = "db/accounts.db"
         self.config = ServiceConfig()
         super().__init__(*args, **kwargs)
 
