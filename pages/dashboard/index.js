@@ -13,8 +13,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const getCurrentUser = 'API CALL TO GET LOGGED IN USER'
-        const event_api_path = 'event?name=[username]&date=[today]'; // API path we will use in future
-        const eventsResponse = await fetch(`http://${eventServiceConfig.ip}:${eventServiceConfig.port}/${event_api_path}`);
+        const eventsResponse = await fetch(`http://localhost:3000/event/${accountId}/retrieve`);
         const eventData = await eventsResponse.json();
         setUsername(getCurrentUser.username);
         setEvents(eventData.events);

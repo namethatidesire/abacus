@@ -31,7 +31,7 @@ export default class Calendar extends Component {
         if (!accountId) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}`);
+            const response = await fetch(`http://localhost:3000/event/${accountId}/retrieve`);
             if (response.ok) {
                 const data = await response.json();
                 const events = data.events.reduce((acc, event) => {
@@ -85,18 +85,15 @@ export default class Calendar extends Component {
             };
 
             try {
-                const response = await fetch('http://localhost:8081/event', {
+                const response = await fetch(`http://localhost:3000/event/${accountId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ command: 'create', ...newEvent }),
+                    body: JSON.stringify({ newEvent }),
                 });
 
                 if (response.ok) {
-                    // const data = await response.json();
-                    // console.log('Event created:', data);
-                    // Optionally, you can update the local state to reflect the new event
                     this.setState((prevState) => {
                         const events = { ...prevState.events };
                         const dateKey = new Date(day.date).toDateString();
