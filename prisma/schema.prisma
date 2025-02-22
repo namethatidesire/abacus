@@ -20,6 +20,7 @@ model User {
   email String @unique
   password String
   createdAt DateTime @default(now())
+  timezone String @default("UTC")
 
   events Event[]
 }
