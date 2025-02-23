@@ -34,12 +34,19 @@ export default class Calendar extends Component {
             const response = await fetch(`http://localhost:3000/event/${accountId}/retrieve`);
             if (response.ok) {
                 const data = await response.json();
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const events = data.events.reduce((acc, event) => {
-                    const dateKey = new Date(event.date.split('-').reverse().join('-')).toDateString();
+                    const eventDate = new Date(event.date);
+                    const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
+                    const dateKey = localDate.toDateString();
                     if (!acc[dateKey]) {
                         acc[dateKey] = [];
                     }
-                    acc[dateKey].push(event);
+                    acc[dateKey].push({
+                        ...event,
+                        date: localDate.toISOString().split('T')[0],
+                        time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+                    });
                     return acc;
                 }, {});
                 this.setState({ events });
@@ -75,10 +82,12 @@ export default class Calendar extends Component {
         const eventColor = prompt("Enter event color (e.g., #FF0000):");
         const eventTime = prompt("Enter event time (HH:MM):");
         if (eventTitle && eventColor && eventTime) {
+            const localDate = new Date(day.date);
+            const utcDate = new Date(localDate.toISOString().split('T')[0] + 'T' + eventTime + ':00Z');
             const newEvent = {
                 accountId,
                 title: eventTitle,
-                date: day.date.toISOString().split('T')[0].split('-').reverse().join('-'), // Format date as DD-MM-YYYY
+                date: utcDate.toISOString(),
                 time: eventTime,
                 recurring: 'false',
                 color: eventColor

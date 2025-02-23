@@ -15,22 +15,33 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   username String @unique
   email String @unique
   password String
   createdAt DateTime @default(now())
+  timezone String @default("UTC")
+
+  events Event[]
+}
+
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  color String
 
   events Event[]
 }
 
 model Event {
-  id Int @id @default(autoincrement())
-  userId Int
+  id String @id @default(uuid())
+  userId String
   title String
   date DateTime @default(now())
   recurring Boolean
   color String
+  type String // Currently can be an EVENT or TASK.
+  tags Tag[] // Tags for filtering
 
   // Possible new fields for future update
   description String?
