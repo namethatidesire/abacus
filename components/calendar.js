@@ -73,6 +73,35 @@ export default class Calendar extends Component {
         this.setState({ currentDay: new Date(this.state.currentDay.setDate(this.state.currentDay.getDate() - 1)) });
     }
 
+// Function to advance to the next month
+nextMonth = () => {
+    const curMonth = this.state.currentDay.getMonth();
+    const curYear = this.state.currentDay.getFullYear();
+    const nextMonth = curMonth === 11 ? 0 : curMonth + 1;
+    const chgYear = nextMonth === 0 ? curYear + 1 : curYear;
+
+    // Handle day overflow (e.g., January 31st -> February 28th/29th)
+    const newDate = new Date(chgYear, nextMonth, 1);
+    const maxDay = new Date(chgYear, nextMonth + 1, 0).getDate();
+    const currentDay = Math.min(this.state.currentDay.getDate(), maxDay);
+    this.setState({ currentDay: new Date(chgYear, nextMonth, currentDay) });
+}
+
+// Function to go to the previous month
+previousMonth = () => {
+    const curMonth = this.state.currentDay.getMonth();
+    const curYear = this.state.currentDay.getFullYear();
+    const prevMonth = curMonth === 0 ? 11 : curMonth - 1;
+    const chgYear = prevMonth === 11 ? curYear - 1 : curYear;
+
+    // Handle day overflow (e.g., March 31st -> February 28th/29th)
+    const newDate = new Date(chgYear, prevMonth, 1);
+    const maxDay = new Date(chgYear, prevMonth + 1, 0).getDate();
+    const currentDay = Math.min(this.state.currentDay.getDate(), maxDay);
+    this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
+}
+
+
     // Function to create an event
     createEvent = async (day) => {
         const { accountId } = this.state;
@@ -126,25 +155,20 @@ export default class Calendar extends Component {
             <div className="calendar">
                 {/* Calendar Header */}
                 <div className="calendar-header">
+                    {/* left arrow icon */}
+                    <button className ="left-arrow" onClick={this.previousMonth}>
+                            <span className="material-icons">arrow_back</span>
+                        </button>
+                    
                     {/* Current Month and Year */}
                     <div className="title">
                         <h2>{this.months[this.state.currentDay.getMonth()]} {this.state.currentDay.getFullYear()}</h2>
                     </div>
-
-                    <div className="tools">
-                        {/* Back arrow icon */}
-                        <button onClick={this.previousDay}>
-                            <span className="material-icons">arrow_back</span>
-                        </button>
-
-                        {/* Current date selected */}
-                        <p>{this.months[this.state.currentDay.getMonth()].substring(0, 3)} {this.state.currentDay.getDate()}</p>
-
-                        {/* Forward arrow icon */}
-                        <button onClick={this.nextDay}>
-                            <span className="material-icons">arrow_forward</span>
-                        </button>
-                    </div>
+                    
+                    {/* right arrow icon */}
+                    <button className='right-arrow' onClick={this.nextMonth}>
+                        <span className="material-icons">arrow_forward</span>
+                    </button>
                 </div>
 
                 {/* Calendar Body */}

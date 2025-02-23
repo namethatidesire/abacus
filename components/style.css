@@ -1,120 +1,132 @@
+/* Main calendar container */
 .calendar {
-    width: 900px;
-    height: 600px;
-    display: flex;
-    flex-direction: column;
-    margin-top: 2rem;
-    margin-left: auto;
-    margin-right: auto;
-    color: black;
-  }
-  
-  .calendar-header {
-    width: 100%;
-    height: 50px;
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: black;
-  }
-  
-  .title {
-    width: 25%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-  
-  .title h2 {
-    margin: auto;
-  }
-  
-  .tools {
-    width: 25%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-  
-  .tools button {
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    background-color: #ffffff;
-    border: none;
-  }
-  
-  .tools button span:hover {
-    color: #99cccc;
-  }
-  
-  .calendar-body {
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .table-header {
-    height: 100px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-  }
-  
-  .weekday {
-    width: 100px;
-    text-align: center;
-  }
-  
-  .table-content {
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    box-sizing: border-box;
-  }
-  
-  .calendar-day {
-    width: 125px;
-    height: 75px;
-    position: relative;
-    border: 1px solid #a6a6a6;
-  }
-  
-  .calendar-day:hover {
-    background-color: rgba(0,0,0,.20);
-  }
-  
-  .calendar-day p {
-    position: absolute;
-    right: 10px;
-    color: #a6a6a6;
-  }
-  
-  .current p {
-    color: #000000;
-  }
-  
-  .selected p {
-    color: #cc0000;
-    font-weight: bold;
-  }
-  .selected {
-    background-color: rgba(0,0,0,.10);
-  }
-  .event {
-    margin: 2px 0;
-    padding: 2px 5px;
-    font-size: 0.9em;
-    color: #333;
+  width: 900px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+  margin-left: auto;
+  margin-right: auto;
+  color: black;
 }
 
+/* Calendar Header */
+.calendar-header {
+  width: 100%;
+  height: 50px;
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Title (Month and Year) */
+.title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-grow: 1;
+  position: absolute;
+}
+
+/* Navigation buttons (left and right arrows) */
+.left-arrow{
+  background-color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 5px;
+  position: absolute;
+  left: 450px; /* Use these to move the buttons closer to the title*/
+}
+
+.right-arrow{
+  background-color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 5px;
+  position: absolute;
+  right: 450px
+}
+
+/* Hover effect for the buttons */
+.left-arrow span:hover,
+.right-arrow span:hover {
+  color: #99cccc;
+
+}
+
+/* Calendar Body */
+.calendar-body {
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Weekday labels */
+.table-header {
+  height: 100px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* Calendar day cells */
+.table-content {
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.calendar-day {
+  width: 125px;
+  height: 75px;
+  position: relative;
+  border: 1px solid #a6a6a6;
+}
+
+.calendar-day:hover {
+  background-color: rgba(0, 0, 0, 0.20);
+}
+
+.calendar-day p {
+  position: absolute;
+  right: 10px;
+  color: #a6a6a6;
+}
+
+.current p {
+  color: #000000;
+}
+
+.selected p {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+.selected {
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+/* Event styling */
+.event {
+  margin: 2px 0;
+  padding: 2px 5px;
+  font-size: 0.9em;
+  color: #333;
+}
+
+/* Navbar (If needed) */
 .navbar {
   background-color: lightblue;
   padding: 10px;
