@@ -29,8 +29,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  flex-grow: 1;
-  position: absolute;
+  position: relative;
 }
 
 /* Navigation buttons (left and right arrows) */
@@ -40,8 +39,7 @@
   cursor: pointer;
   font-size: 24px;
   padding: 5px;
-  position: absolute;
-  left: 450px; /* Use these to move the buttons closer to the title*/
+  position: relative;
 }
 
 .right-arrow{
@@ -50,8 +48,7 @@
   cursor: pointer;
   font-size: 24px;
   padding: 5px;
-  position: absolute;
-  right: 450px
+  position: relative;
 }
 
 /* Hover effect for the buttons */
@@ -64,14 +61,12 @@
 /* Calendar Body */
 .calendar-body {
   width: 100%;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
 /* Weekday labels */
 .table-header {
-  height: 100px;
   width: 100%;
   display: flex;
   align-items: center;

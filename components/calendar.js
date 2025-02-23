@@ -1,6 +1,8 @@
 "use client";
 import React, { Component } from 'react';
 import CalendarDays from './calendar-days.js';
+import Typography from "@mui/material/Typography";
+import { ArrowBack, ArrowForward } from "@mui/icons-material";
 import './style.css';
 
 export default class Calendar extends Component {
@@ -157,17 +159,17 @@ previousMonth = () => {
                 <div className="calendar-header">
                     {/* left arrow icon */}
                     <button className ="left-arrow" onClick={this.previousMonth}>
-                            <span className="material-icons">arrow_back</span>
-                        </button>
+                        <ArrowBack fontSize={"large"} />
+                    </button>
                     
                     {/* Current Month and Year */}
                     <div className="title">
-                        <h2>{this.months[this.state.currentDay.getMonth()]} {this.state.currentDay.getFullYear()}</h2>
+                        <Typography variant="h4">{this.months[this.state.currentDay.getMonth()]} {this.state.currentDay.getFullYear()}</Typography>
                     </div>
                     
                     {/* right arrow icon */}
                     <button className='right-arrow' onClick={this.nextMonth}>
-                        <span className="material-icons">arrow_forward</span>
+                        <ArrowForward fontSize={"large"} />
                     </button>
                 </div>
 
@@ -177,7 +179,7 @@ previousMonth = () => {
                     <div className="table-header">
                         {
                         this.weekdays.map((weekday, index) => {
-                            return <div key={index} className="weekday"><p>{weekday}</p></div>
+                            return <div key={index} className="weekday"><Typography variant={"subtitle1"}>{weekday}</Typography></div>
                         })
                         }
                     </div>
