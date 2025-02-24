@@ -56,6 +56,7 @@ model Course {
   id    String  @id @default(uuid())
   name  String  @unique
   tag   String  @unique
+  colour String 
 
   userId String
   user   User    @relation(fields: [userId], references: [id]) // Each course is associated with one user

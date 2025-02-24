@@ -40,9 +40,10 @@ export async function POST(request) {
   }
 }
 
+// Gets courses and events from the user associated with the course
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url); // TODO: MAYBE CHANGE THE WAY THE ID GETS PASSED ON?
     const userId = searchParams.get('userId');
 
     if (!userId) {
@@ -70,6 +71,27 @@ export async function GET(request) {
     }));
 
     return NextResponse.json(coursesWithEvents, { status: 200 });
+  } catch (error) {
+    console.error(error.stack);
+    return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url); // TODO: MAYBE CHANGE THE WAY THE ID GETS PASSED ON?
+    const courseId = searchParams.get('id');
+
+    if (!courseId) {
+      return NextResponse.json({ message: "Course ID is required" }, { status: 400 });
+    }
+
+    // Delete the course
+    await prisma.course.delete({
+      where: { id: courseId },
+    });
+
+    return NextResponse.json({ message: "Course deleted successfully" }, { status: 200 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });

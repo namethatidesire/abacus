@@ -11,6 +11,9 @@ const Navbar = () => {
         <li>
           <Link href="/calendar">Calendar</Link>
         </li>
+        <li>
+          <Link href="/coursePage">Courses</Link>
+        </li>
       </ul>
     </nav>
   );
