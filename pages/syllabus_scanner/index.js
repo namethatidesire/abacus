@@ -66,6 +66,10 @@ const SyllabusScanner = () => {
           description: null,
           start: null,
           end: null,
+          type: "EVENT",
+          tags: {
+            connect: [] // This creates an event with no tags
+          }
         };
 
         console.log('Adding event:', eventData);
@@ -111,19 +115,23 @@ const SyllabusScanner = () => {
     try {
       const eventData = {
         id: crypto.randomUUID(),
-        userId: 14,
+        userId: "d79bf43f-a033-4485-94ea-d1e300299829",
         title: event.eventTitle,
         date: event.date, // Already in correct SQLite format
         recurring: event.recurring,
         color: '#1976d2',
         description: null,
         start: null,
-        end: null
+        end: null,
+        type: "EVENT",
+        tags: {
+          connect: [] // This creates an event with no tags
+        }
       };
 
       console.log('Adding single event:', eventData);
 
-      const response = await fetch('/api/event/14', {  // Using accountId 14 to match userId
+      const response = await fetch('/api/event/d79bf43f-a033-4485-94ea-d1e300299829', {  // Using accountId 14 to match userId
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -304,16 +312,27 @@ const SyllabusScanner = () => {
               throw new Error('No JSON array found in response');
             }
             
-            // Parse the JSON string from the text content
+            // Parse the JSON string and handle null dates
             parsedEvents = JSON.parse(jsonMatch[0]);
+            
+            // Add date validation and default to current date if null
+            parsedEvents = parsedEvents.map(event => {
+              if (!event.date) {
+                const now = new Date();
+                event.date = now.toISOString(); // This will give us the format "YYYY-MM-DDTHH:mm:ss.sssZ"
+                console.log('Replaced null date with current date:', event.date);
+              }
+              return event;
+            });
+            
             console.log('Parsed events:', parsedEvents);
+            setEvents(parsedEvents);
+            
           } catch (parseError) {
             console.error('Error parsing events:', parseError);
             throw new Error('Failed to parse events from response: ' + parseError.message);
           }
   
-          setEvents(parsedEvents);
-          
         } catch (err) {
           console.error('Processing error:', err);
           setError('Error processing PDF: ' + (err.message || 'Unknown error'));
