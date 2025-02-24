@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/navbar'; 
+import styles from './coursepage.module.css';
 
 const CoursePage = () => {
   const [message, setMessage] = useState('');
@@ -65,12 +66,19 @@ const CoursePage = () => {
       <button onClick={createCourse}>Create Course</button>
       {message && <p>{message}</p>}
       {courses.map((course) => (
-        <details key={course.id}>
-          <summary>{course.name}</summary>
-          <p>Tag: {course.tag}</p>
-          {course.events.map((event) => (
-            <p key={event.id}>{event.title}</p>
-          ))}
+        <details className={styles.details} key={course.id}>
+          <summary className={styles.summary}>{course.name}</summary>
+          <article className={styles.article}>
+            {/* SPECIFICALLY FOR DEBUGGING */}
+            {/* <p>Tag: {course.tag}</p>  */}
+            <p>Events:</p>
+            <ul>
+              {course.events.map((event) => (
+                <li key={event.id}>{event.title} - {event.date}</li>
+              ))}
+            </ul>
+          </article>
+          
         </details>
       ))}
     </div>
