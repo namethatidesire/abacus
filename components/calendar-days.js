@@ -6,51 +6,83 @@ function CalendarDays(props) {
     const weekdayOfFirstDay = firstDayOfMonth.getDay();
     let currentDays = [];
 
-    for (let day = 0; day < 42; day++) {
-        if (day === 0 && weekdayOfFirstDay === 0) {
-            firstDayOfMonth.setDate(firstDayOfMonth.getDate() - 7);
-        } else if (day === 0) {
-            firstDayOfMonth.setDate(firstDayOfMonth.getDate() + (day - weekdayOfFirstDay));
-        } else {
-            firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
-        }
+    // Get last month's days that should show
+    const lastMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 0);
+    const lastMonthDays = lastMonth.getDate();
+    const daysFromLastMonth = weekdayOfFirstDay;
+    
+    // Add last month's days
+    for (let i = daysFromLastMonth - 1; i >= 0; i--) {
+        currentDays.push({
+            currentMonth: false,
+            date: new Date(props.day.getFullYear(), props.day.getMonth() - 1, lastMonthDays - i),
+            month: props.day.getMonth() - 1,
+            number: lastMonthDays - i,
+            selected: false,
+            year: props.day.getFullYear()
+        });
+    }
 
-        // Create the calendar day object
-        let calendarDay = {
-            currentMonth: (firstDayOfMonth.getMonth() === props.day.getMonth()),
-            date: (new Date(firstDayOfMonth)),
-            month: firstDayOfMonth.getMonth(),
-            number: firstDayOfMonth.getDate(),
-            selected: (firstDayOfMonth.toDateString() === props.day.toDateString()),
-            year: firstDayOfMonth.getFullYear()
-        }
+    // Current month's days
+    const thisMonth = new Date(props.day.getFullYear(), props.day.getMonth() + 1, 0);
+    const daysInMonth = thisMonth.getDate();
+    
+    const today = new Date();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(props.day.getFullYear(), props.day.getMonth(), day);
+        currentDays.push({
+            currentMonth: true,
+            date: date,
+            month: props.day.getMonth(),
+            number: day,
+            selected: date.toDateString() === props.day.toDateString(),
+            today: date.getDate() === today.getDate() && 
+                  date.getMonth() === today.getMonth() && 
+                  date.getFullYear() === today.getFullYear(),
+            year: props.day.getFullYear()
+        });
+    }
 
-        currentDays.push(calendarDay);
+    // Next month's days
+    const remainingDays = 42 - currentDays.length;
+    for (let day = 1; day <= remainingDays; day++) {
+        currentDays.push({
+            currentMonth: false,
+            date: new Date(props.day.getFullYear(), props.day.getMonth() + 1, day),
+            month: props.day.getMonth() + 1,
+            number: day,
+            selected: false,
+            year: props.day.getFullYear()
+        });
     }
 
     return (
-        // The rendered calendar days
         <div className="table-content">
-            {
-                // Creates the calendar days and maps them to the currentDays array
-                currentDays.map((day, index) => {
-                    const dateKey = day.date.toDateString();
-                    const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
-                    return (
-                        <div key={index} className={"calendar-day" + (day.currentMonth ? " current" : "") + (day.selected ? " selected" : "")}
-                             onClick={() => props.createEvent(day)}>
-                            <p>{day.number}</p>
-                            {dayEvents.map((event, eventIndex) => (
-                                <p key={eventIndex} className="event" style={{ backgroundColor: event.color }}>
-                                    {event.title}
-                                </p>
-                            ))}
-                        </div>
-                    )
-                })
-            }
+            {currentDays.map((day, index) => {
+                const dateKey = day.date.toDateString();
+                const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
+                return (
+                    <div 
+                        key={index} 
+                        className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
+                        onClick={() => props.createEvent(day)}
+                    >
+                        <p>{day.number}</p>
+                        {dayEvents.map((event, eventIndex) => (
+                            <div 
+                                key={eventIndex} 
+                                className="event" 
+                                style={{ backgroundColor: event.color }}
+                            >
+                                {event.title}
+                            </div>
+                        ))}
+                    </div>
+                );
+            })}
         </div>
-    )
+    );
 }
 
 export default CalendarDays;

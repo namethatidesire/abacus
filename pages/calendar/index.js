@@ -7,8 +7,6 @@ import Typography from '@mui/material/Typography';
 const CalendarPage = () => {
   return (
     <div>
-      <Navbar />
-      <Typography variant="h2" className={"title"}>Calendar</Typography>
       <Calendar />
     </div>
   );
