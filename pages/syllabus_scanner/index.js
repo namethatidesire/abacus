@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -43,6 +43,126 @@ const SyllabusScanner = () => {
   const [error, setError] = useState('');
   const [showError, setShowError] = useState(false);
   const [events, setEvents] = useState(null);
+  const [isAddingEvents, setIsAddingEvents] = useState(false);
+  const [addedCount, setAddedCount] = useState(0);
+
+  const handleAddAllEvents = useCallback(async () => {
+    if (!events?.length) return;
+    
+    setIsAddingEvents(true);
+    setError('');
+    setAddedCount(0);
+    
+    try {
+      // Process events sequentially using your existing API endpoint
+      for (const event of events) {
+        const eventData = {
+          id: crypto.randomUUID(),
+          userId: 'd79bf43f-a033-4485-94ea-d1e300299829',
+          title: event.eventTitle,
+          date: event.date, // Already in correct SQLite format
+          recurring: event.recurring,
+          color: '#1976d2',
+          description: null,
+          start: null,
+          end: null,
+        };
+
+        console.log('Adding event:', eventData);
+
+        console.log('Sending event data:', eventData);
+        const response = await fetch('/api/event/d79bf43f-a033-4485-94ea-d1e300299829', {  // Using accountId 14 to match userId
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData)
+        });
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          console.log('Error response:', responseText);
+          let error;
+          try {
+            error = JSON.parse(responseText);
+          } catch (e) {
+            error = { message: responseText || 'Invalid server response' };
+          }
+          throw new Error(error.message || 'Failed to add event');
+        }
+
+        setAddedCount(prev => prev + 1);
+      }
+
+      // Show success message
+      setError(`Successfully added ${events.length} events to calendar`);
+      setShowError(true);
+      
+    } catch (err) {
+      console.error('Error adding events:', err);
+      setError(`Added ${addedCount} events. Failed to add remaining: ${err.message || 'Unknown error'}`);
+      setShowError(true);
+    } finally {
+      setIsAddingEvents(false);
+    }
+  }, [events]);
+
+  const handleAddSingleEvent = useCallback(async (event) => {
+    try {
+      const eventData = {
+        id: crypto.randomUUID(),
+        userId: 14,
+        title: event.eventTitle,
+        date: event.date, // Already in correct SQLite format
+        recurring: event.recurring,
+        color: '#1976d2',
+        description: null,
+        start: null,
+        end: null
+      };
+
+      console.log('Adding single event:', eventData);
+
+      const response = await fetch('/api/event/14', {  // Using accountId 14 to match userId
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add event');
+      }
+
+      setError('Event added successfully');
+      setShowError(true);
+
+    } catch (err) {
+      console.error('Error adding event:', err);
+      setError('Failed to add event: ' + (err.message || 'Unknown error'));
+      setShowError(true);
+    }
+  }, []);
+
+  const renderEventRow = (event, index) => (
+    <TableRow key={index}>
+      <TableCell>{event.eventTitle}</TableCell>
+      <TableCell>{formatDate(event.date)}</TableCell>
+      <TableCell>{event.recurring ? 'Yes' : 'No'}</TableCell>
+      <TableCell align="right">
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleAddSingleEvent(event)}
+          sx={{ minWidth: '40px', px: 1 }}
+        >
+          +
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 
   const handleFileUpload = async (event) => {
     const selectedFile = event.target.files?.[0];
@@ -66,41 +186,41 @@ const SyllabusScanner = () => {
 
     // Debug mode - skip API call if file is named debug.pdf
     if (file.name.toLowerCase() === 'debug.pdf') {
-    console.log('Debug mode activated');
-    const debugEvents = [
-      {
-        "eventTitle": "Debug Tutorial",
-        "date": "ongoing",
-        "recurring": true
-      },
-      {
-        "eventTitle": "Debug Assignment 1",
-        "date": "2025-03-15",
-        "recurring": false
-      },
-      {
-        "eventTitle": "Debug Midterm",
-        "date": "2025-04-01",
-        "recurring": false
-      },
-      {
-        "eventTitle": "Debug Project",
-        "date": "ongoing",
-        "recurring": true
-      },
-      {
-        "eventTitle": "Debug Final",
-        "date": "2025-05-01",
-        "recurring": false
-      }
-    ];
+      console.log('Debug mode activated');
+      const debugEvents = [
+        {
+          "eventTitle": "Debug Tutorial",
+          "date": "2025-02-23 00:00:00.000Z",
+          "recurring": true
+        },
+        {
+          "eventTitle": "Debug Assignment 1",
+          "date": "2025-03-15 23:59:00.000Z",
+          "recurring": false
+        },
+        {
+          "eventTitle": "Debug Midterm",
+          "date": "2025-04-01 23:59:00.000Z",
+          "recurring": false
+        },
+        {
+          "eventTitle": "Debug Project",
+          "date": "2025-02-23 00:00:00.000Z",
+          "recurring": true
+        },
+        {
+          "eventTitle": "Debug Final",
+          "date": "2025-05-01 23:59:00.000Z",
+          "recurring": false
+        }
+      ];
 
-    setTimeout(() => {
-      setEvents(debugEvents);
-      setIsProcessing(false);
-    }, 1000); // Simulate API delay
-    return;
-  }
+      setTimeout(() => {
+        setEvents(debugEvents);
+        setIsProcessing(false);
+      }, 1000); // Simulate API delay
+      return;
+    }
   
     try {
       const reader = new FileReader();
@@ -113,6 +233,25 @@ const SyllabusScanner = () => {
           }
   
           console.log('Sending request with PDF data length:', base64String.length);
+          
+          const prompt = `
+          Analyze this syllabus PDF and extract all deadlines and key dates.
+          Return ONLY a JSON array using this exact format, with no other text or explanation:
+          [{
+            "eventTitle": "Example Assignment",
+            "date": "2024-03-15 23:59:00.000Z",
+            "recurring": false
+          }]
+
+          Important formatting rules:
+          - eventTitle must be a string
+          - date must be in SQLite DateTime format: "YYYY-MM-DD HH:mm:ss.SSSZ"
+          - for recurring events, use "recurring" field instead of a special date format
+          - recurring must be a boolean
+          - return only the JSON array, no other text
+          - all dates must be in UTC timezone
+          - do not include any explanation or text outside the JSON array
+          `;
           
           const response = await fetch('http://localhost:3000/api/process-syllabus', {
             method: 'POST',
@@ -128,7 +267,7 @@ const SyllabusScanner = () => {
                   content: [
                     {
                       type: "text",
-                      text: "Please analyze this syllabus PDF and extract all deadlines and key dates. Return it to me a list in json form as follows: {eventTitle: String, date: DateTime, recurring: Boolean}"
+                      text: prompt
                     },
                     {
                       type: "document",
@@ -155,12 +294,18 @@ const SyllabusScanner = () => {
           // Parse the events from Claude's response
           let parsedEvents;
           try {
-            // Get the text content from the response structure
+            // Extract the JSON string from Claude's response
             const textContent = data.content[0].text;
             console.log('Text content:', textContent);
             
+            // Find the JSON array in the text response
+            const jsonMatch = textContent.match(/\[.*\]/s);
+            if (!jsonMatch) {
+              throw new Error('No JSON array found in response');
+            }
+            
             // Parse the JSON string from the text content
-            parsedEvents = JSON.parse(textContent);
+            parsedEvents = JSON.parse(jsonMatch[0]);
             console.log('Parsed events:', parsedEvents);
           } catch (parseError) {
             console.error('Error parsing events:', parseError);
@@ -225,6 +370,35 @@ const SyllabusScanner = () => {
       return dateString; // Fallback to original string if parsing fails
     }
   };
+
+  // Update the Add All to Calendar button in the render section
+  const addAllButton = (
+    <Button
+      variant="contained"
+      size="large"
+      onClick={handleAddAllEvents}
+      disabled={isAddingEvents}
+      sx={{
+        bgcolor: '#1976d2',
+        color: 'white',
+        px: 4,
+        py: 1,
+        fontSize: '16px',
+        '&:hover': {
+          bgcolor: '#1565c0',
+        }
+      }}
+    >
+      {isAddingEvents ? (
+        <>
+          <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
+          {addedCount}/{events.length}
+        </>
+      ) : (
+        'Add All to Calendar'
+      )}
+    </Button>
+  );
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
@@ -301,22 +475,7 @@ const SyllabusScanner = () => {
               </TableHead>
               <TableBody>
                 {Array.isArray(events) ? (
-                  events.map((event, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{event.eventTitle}</TableCell>
-                      <TableCell>{formatDate(event.date)}</TableCell>
-                      <TableCell>{event.recurring ? 'Yes' : 'No'}</TableCell>
-                      <TableCell align="right">
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          sx={{ minWidth: '40px', px: 1 }}
-                        >
-                          +
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  events.map((event, index) => renderEventRow(event, index))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4}>
@@ -330,22 +489,7 @@ const SyllabusScanner = () => {
             </Table>
           </TableContainer>
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-            <Button
-              variant="contained"
-              size="large"
-              sx={{
-                bgcolor: '#1976d2',
-                color: 'white',
-                px: 4,
-                py: 1,
-                fontSize: '16px',
-                '&:hover': {
-                  bgcolor: '#1565c0',
-                }
-              }}
-            >
-              Add All to Calendar
-            </Button>
+            {addAllButton}
           </Box>
         </Box>
       )}
