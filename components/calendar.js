@@ -31,7 +31,9 @@ export default class Calendar extends Component {
         if (!accountId) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}/retrieve`);
+            const response = await fetch(`http://localhost:3000/event/${accountId}`, {
+                method: 'GET'
+            });
             if (response.ok) {
                 const data = await response.json();
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
