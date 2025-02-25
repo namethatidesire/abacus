@@ -34,7 +34,7 @@ model Tag {
   events Event[]
 }
 
-model Tag {
+model TagList {
   id String @id @default(uuid())
   name String @unique
   color String
@@ -50,7 +50,7 @@ model Event {
   recurring Boolean
   color String
   type String // Currently can be an EVENT or TASK.
-  tags Tag[] // Tags for filtering
+  tags TagList[] // Tags for filtering
 
   // Possible new fields for future update
   description String?
