@@ -34,6 +34,14 @@ model Tag {
   events Event[]
 }
 
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  color String
+
+  events Event[]
+}
+
 model Event {
   id String @id @default(uuid())
   userId String
