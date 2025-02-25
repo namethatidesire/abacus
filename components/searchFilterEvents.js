@@ -142,7 +142,7 @@ export default function SearchFilterEventDialog(accountId) {
                   <RadioGroup
                     aria-labelledby="filter-and-or-radio-buttons-group"
                     name="controlled-radio-buttons-group"
-                    value={value}
+                    value={filterOR}
                     onChange={handleAndOr}
                   >
                     <FormControlLabel value=true control={<Radio />} label="AND" />
