@@ -54,15 +54,17 @@ export default function SearchFilterEventDialog(accountId) {
              if (filterOR) {
                    const events = await prisma.event.findMany({
                      where:  {
+                       type: eventType
                        tags: {
                         hasSome: eventTags
                        }
                      }
                    });
                  }
-             else { /*FilterAND*/
+             else { //FilterAND
                    const events = await prisma.event.findMany({
                       where:  {
+                        type: eventType
                         tags: {
                          hasEvery: eventTags
                         }
@@ -143,8 +145,8 @@ export default function SearchFilterEventDialog(accountId) {
                     value={value}
                     onChange={handleAndOr}
                   >
-                    <FormControlLabel value="and" control={<Radio />} label="AND" />
-                    <FormControlLabel value="or" control={<Radio />} label="OR" />
+                    <FormControlLabel value=true control={<Radio />} label="AND" />
+                    <FormControlLabel value=false control={<Radio />} label="OR" />
                   </RadioGroup>
                 </FormControl>
 
