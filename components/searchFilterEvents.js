@@ -54,21 +54,21 @@ export default function SearchFilterEventDialog(accountId) {
              if (filterOR) {
                    const events = await prisma.event.findMany({
                      where:  {
-                       type: eventType
+                       type: eventType,
                        tags: {
-                        hasSome: eventTags
-                       }
-                     }
+                        hasSome: eventTags,
+                       },
+                     },
                    });
                  }
              else { //FilterAND
                    const events = await prisma.event.findMany({
                       where:  {
-                        type: eventType
+                        type: eventType,
                         tags: {
-                         hasEvery: eventTags
-                        }
-                      }
+                         hasEvery: eventTags,
+                        },
+                      },
                     });
              }
              //TODO: Display events
