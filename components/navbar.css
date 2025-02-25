@@ -1,0 +1,25 @@
+/* Navbar styling */
+.navbar {
+    background-color: #8CA7D6;
+    padding: 0.75rem 1rem;
+}
+
+.navbar-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.navbar-title {
+    color: white !important;
+    font-weight: 500 !important;
+}
+
+.navbar-icon {
+    padding: 8px;
+}
+
+/* Hover effect for icons */
+.navbar-icon:hover {
+    background-color: rgba(251, 229, 157, 0.1) !important;
+}
