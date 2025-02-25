@@ -23,6 +23,15 @@ model User {
   timezone String @default("UTC")
 
   events Event[]
+  courses   Course[]
+}
+
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  color String
+
+  events Event[]
 }
 
 model TagList {
@@ -49,4 +58,14 @@ model Event {
   end DateTime?
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id    String  @id @default(uuid())
+  name  String  @unique
+  tag   String  @unique
+  colour String 
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id]) // Each course is associated with one user
 }
