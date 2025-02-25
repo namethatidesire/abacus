@@ -49,7 +49,7 @@ export default function SearchFilterEventDialog(accountId) {
     };
 
      // Function to search for events
-     const searchFilterEvent = () => {
+     const searchFilterEvent = async () => {
          try {
              if (filterOR) {
                    const events = await prisma.event.findMany({
