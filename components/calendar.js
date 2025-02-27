@@ -40,7 +40,7 @@ export default class Calendar extends Component {
         }
 
         try {
-            const response = await fetch(`http://localhost:3000/api/account/authorize`, {
+            const response = await fetch(`api/account/authorize`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -70,13 +70,13 @@ export default class Calendar extends Component {
         if (!accountId) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}`, {
+            const response = await fetch(`api/event/${accountId}`, {
                 method: 'GET'
             });
             if (response.ok) {
                 const data = await response.json();
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const events = data.events.reduce((acc, event) => {
+                const events = data.reduce((acc, event) => {
                     const eventDate = new Date(event.date);
                     const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
                     const dateKey = localDate.toDateString();
@@ -97,6 +97,11 @@ export default class Calendar extends Component {
         } catch (error) {
             console.error('Error fetching events:', error);
         }
+    }
+
+    // Callback function to update events after creating a new event
+    updateEvents = () => {
+        this.fetchEvents();
     }
 
     // Function to change the current day
@@ -190,7 +195,7 @@ export default class Calendar extends Component {
                             <ArrowForward sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
-                        <CreateEventDialog accountId={this.state.accountId}/>
+                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
                     </div>
 
                     {/* Calendar Body */}
