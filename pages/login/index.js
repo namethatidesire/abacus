@@ -12,18 +12,18 @@ const LoginPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
+      // Send a POST request to the server
       const response = await fetch(`http://localhost:3000/api/account/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "username": username, "password": password }),
       });
-
+      //If request is successful, store the token in the session storage and redirect to the calendar page
       if (response.status === 201) {
         const data = await response.json();
         setMessage(data.message);
         sessionStorage.setItem('token', data.token);
-        console.log(data.token);
-        window.location.href = `/calendar`; // Send the user to the calendar page
+        window.location.href = `/calendar`;
       } else if (response.status === 401|| response.status === 403) {
         const data = await response.json();
         setMessage(data.message);

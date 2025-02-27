@@ -30,15 +30,17 @@ export default class Calendar extends Component {
             view: 'month' // 'month' or 'week'
         }
     }
-
+    //Load the information for the calendar page
     componentDidMount = async() => {
+        //Retrieve the token from the session storage
         const token = sessionStorage.getItem('token');
+        //If the token is missing, prompt the client and redirect to the login page
         if (!token) {
             alert('Missing token. Please log in again.');
             // Redirect to login page Session expired
             window.location.href = '/login';
         }
-
+        //If the token is present, verify it with the server
         try {
             const response = await fetch(`http://localhost:3000/api/account/authorize`, {
                 method: 'GET',
@@ -47,13 +49,14 @@ export default class Calendar extends Component {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+            //Receive the response from the server
             const data = await response.json();
-            console.log(data);
+            //If the token is valid, retrieve the user ID and fetch the events
+            /*!When the events are implemented, the token will be used to directly retrieve the user's events rather thanm return the user's id!*/
             if (data.status === 200) {
                 const { userId } = data.decoded;
                 this.setState({ accountId: userId }, this.fetchEvents);
-            } else {
+            } else {//If the token is invalid, prompt the client and redirect to the login page
                 alert('Invalid token. Please log in again.');
                 // Redirect to login page Session expired  
                 window.location.href = '/login';

@@ -4,7 +4,7 @@ import { comparePassword, generateToken} from "@/utils/auth";
 
 export async function POST(request) {
   const { username, password } = await request.json();
-
+  //Check if the input fields are valid
   if (
     !username ||
     !password ||
@@ -16,11 +16,11 @@ export async function POST(request) {
       { status: 400 },
     );
   }
-
+  //Using the input values, find the user in the database
   const user = await prisma.user.findUnique({
     where: { username },
   });
-
+  //If the user does not exist or if the password is incorrect, return an error
   if (!user) {
     return NextResponse.json(
       { message: "User does not exist" },
@@ -32,7 +32,7 @@ export async function POST(request) {
       { status: 401 },
     );
   }
-
+  //If the user exists and the password is correct, generate a token
   const token_user = { userId: user.id };
   const token = generateToken(token_user);
 
