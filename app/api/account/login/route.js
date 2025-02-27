@@ -1,6 +1,6 @@
 import { prisma } from "@/utils/db";
 import { NextResponse } from "next/server";
-import { comparePassword, generateToken } from "@/utils/auth";
+import { comparePassword, generateToken} from "@/utils/auth";
 
 export async function POST(request) {
   const { username, password } = await request.json();
@@ -21,14 +21,24 @@ export async function POST(request) {
     where: { username },
   });
 
-  if (!user || !comparePassword(password, user.password)) {
+  if (!user) {
     return NextResponse.json(
-      { message: "Invalid username or password" },
+      { message: "User does not exist" },
+      { status: 401 },
+    );
+  }else if (!comparePassword(password, user.password)){
+    return NextResponse.json(
+      { message: "Incorrect password" },
       { status: 401 },
     );
   }
 
-  const token = generateToken({ userId: user.id });
+  const token_user = { userId: user.id };
+  const token = generateToken(token_user);
 
-  return NextResponse.json({ token });
+  //Send this token to the client to be stored in the browser
+  return NextResponse.json(
+    { message: "Successfully logged in", token: token },
+    { status: 201 },
+  );
 }

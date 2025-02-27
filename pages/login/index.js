@@ -20,12 +20,13 @@ const LoginPage = () => {
 
       if (response.status === 201) {
         const data = await response.json();
-        console.log(data);
-        setMessage('Login successful!');
-
-        window.location.href = `/calendar?accountId=${response.data.id}`; // Send the user to the calendar page
-      } else if (response.status === 403) {
-        setMessage('Username or password is invalid.');
+        setMessage(data.message);
+        sessionStorage.setItem('token', data.token);
+        console.log(data.token);
+        window.location.href = `/calendar`; // Send the user to the calendar page
+      } else if (response.status === 401|| response.status === 403) {
+        const data = await response.json();
+        setMessage(data.message);
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData);

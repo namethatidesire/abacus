@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/navbar.js'; 
-import eventServiceConfig from '../../configs/eventservice.json';
+// import eventServiceConfig from '../../configs/eventservice.json';
 
 const Dashboard = () => {
   const [username, setUsername] = useState('beloved user');
