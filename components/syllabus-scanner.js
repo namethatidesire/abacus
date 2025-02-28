@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect} from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -15,7 +15,12 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -46,6 +51,42 @@ const SyllabusScanner = () => {
   const [isAddingEvents, setIsAddingEvents] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
   const [accountId, setAccountId] = useState(null);
+  const [courseName, setCourseName] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#1976d2');
+  
+  // Predefined Material-UI colors
+  const colors = {
+    'Blue': '#1976d2',
+    'Green': '#2e7d32',
+    'Purple': '#7b1fa2',
+    'Orange': '#ed6c02',
+    'Red': '#d32f2f',
+    'Teal': '#008080',
+    'Pink': '#d81b60',
+    'Brown': '#795548',
+    'Gray': '#757575',
+    'Deep Purple': '#673ab7'
+  };
+  
+  // List of common university-wide terms that shouldn't include course name
+  const universityWideTerms = [
+    'drop deadline',
+    'withdrawal',
+    'enrollment',
+    'registration',
+    'academic holiday',
+    'study break',
+    'reading week',
+    'final exam period',
+    'semester start',
+    'semester end'
+  ];
+
+  const isUniversityWideEvent = (title) => {
+    return universityWideTerms.some(term => 
+      title.toLowerCase().includes(term.toLowerCase())
+    );
+  };
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -87,51 +128,100 @@ const SyllabusScanner = () => {
   }, []);
 
   const handleAddAllEvents = useCallback(async () => {
+    if (!events?.length || !courseName) {
+      setError('Please enter a course name before adding events');
+      setShowError(true);
+      return;
+    }
+    
     const token = sessionStorage.getItem('token');
     let userId;
-      try {
-        // For JWT tokens
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
-        
-        if (!userId) {
-          throw new Error('User ID not found in token');
-        }
-      } catch (tokenError) {
-        console.error('Error parsing token:', tokenError);
-        throw new Error('Invalid authentication token. Please log in again.');
+    try {
+      // For JWT tokens
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+      
+      if (!userId) {
+        throw new Error('User ID not found in token');
       }
+    } catch (tokenError) {
+      console.error('Error parsing token:', tokenError);
+      throw new Error('Invalid authentication token. Please log in again.');
+    }
 
-
-    if (!events?.length) return;
-    
     setIsAddingEvents(true);
     setError('');
     setAddedCount(0);
     
     try {
-      // Process events sequentially using your existing API endpoint
+      // First, ensure the course tag exists
+      if (!isUniversityWideEvent(events[0].eventTitle)) {
+        try {
+          await fetch('/api/tag', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: courseName,
+              color: selectedColor || '#1976d2'
+            })
+          });
+        } catch (err) {
+          console.error('Error creating tag:', err);
+          // Continue anyway, the API might return an error if the tag already exists
+        }
+      }
+      
+      // Process events sequentially
       for (const event of events) {
+        // Prepare event data without tags initially
         const eventData = {
           id: crypto.randomUUID(),
           userId: userId,
-          title: event.eventTitle,
-          date: event.date, // Already in correct SQLite format
+          title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
+          date: event.date,
           recurring: event.recurring,
-          color: '#1976d2',
+          color: selectedColor || '#1976d2', // Ensure color always has a default value
           description: null,
           start: null,
           end: null,
-          type: "EVENT",
-          tags: {
-            connect: [] // This creates an event with no tags
-          }
+          type: "EVENT"
         };
+
+        // Only add tags if it's not a university-wide event
+        if (!isUniversityWideEvent(event.eventTitle) && courseName) {
+          try {
+            // Create the tag first
+            const tagResponse = await fetch('/api/tag', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: courseName,
+                color: selectedColor || '#1976d2'
+              })
+            });
+            
+            if (tagResponse.ok) {
+              // Now that we know the tag exists, we can add it to the eventData
+              eventData.tags = {
+                connect: [{
+                  name: courseName
+                }]
+              };
+            }
+          } catch (tagErr) {
+            console.error('Error with tag, continuing without tag:', tagErr);
+            // Continue without tags if there's an issue
+          }
+        }
 
         console.log('Adding event:', eventData);
 
         console.log('Sending event data:', eventData);
-        const response = await fetch(`/api/event/${userId}`, {  // Using accountId 14 to match userId
+        const response = await fetch(`/api/event/${userId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -165,38 +255,65 @@ const SyllabusScanner = () => {
     } finally {
       setIsAddingEvents(false);
     }
-  }, [events]);
+  }, [events, courseName, selectedColor]);
 
   const handleAddSingleEvent = useCallback(async (event) => {
+    if (!courseName) {
+      setError('Please enter a course name before adding events');
+      setShowError(true);
+      return;
+    }
+    
     const token = sessionStorage.getItem('token');
     let userId;
-      try {
-        // For JWT tokens
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
-        
-        if (!userId) {
-          throw new Error('User ID not found in token');
-        }
-      } catch (tokenError) {
-        console.error('Error parsing token:', tokenError);
-        throw new Error('Invalid authentication token. Please log in again.');
+    try {
+      // For JWT tokens
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+      
+      if (!userId) {
+        throw new Error('User ID not found in token');
       }
+    } catch (tokenError) {
+      console.error('Error parsing token:', tokenError);
+      throw new Error('Invalid authentication token. Please log in again.');
+    }
 
     try {
+      // First, ensure the course tag exists if this isn't a university-wide event
+      if (!isUniversityWideEvent(event.eventTitle)) {
+        try {
+          await fetch('/api/tag', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: courseName,
+              color: selectedColor || '#1976d2'
+            })
+          });
+        } catch (err) {
+          console.error('Error creating tag:', err);
+          // Continue anyway, the API might return an error if the tag already exists
+        }
+      }
+
       const eventData = {
         id: crypto.randomUUID(),
         userId: userId,
-        title: event.eventTitle,
-        date: event.date, // Already in correct SQLite format
+        title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
+        date: event.date,
         recurring: event.recurring,
-        color: '#1976d2',
+        color: selectedColor || '#1976d2', // Ensure color always has a default value
         description: null,
         start: null,
         end: null,
         type: "EVENT",
         tags: {
-          connect: [] // This creates an event with no tags
+          connect: isUniversityWideEvent(event.eventTitle) ? [] : [{
+            name: courseName
+          }]
         }
       };
 
@@ -211,8 +328,8 @@ const SyllabusScanner = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add event');
+        const responseError = await response.json();
+        throw new Error(responseError.message || 'Failed to add event');
       }
 
       setError('Event added successfully');
@@ -223,11 +340,11 @@ const SyllabusScanner = () => {
       setError('Failed to add event: ' + (err.message || 'Unknown error'));
       setShowError(true);
     }
-  }, []);
+  }, [courseName, selectedColor]);
 
   const renderEventRow = (event, index) => (
     <TableRow key={index}>
-      <TableCell>{event.eventTitle}</TableCell>
+      <TableCell>{isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`}</TableCell>
       <TableCell>{formatDate(event.date)}</TableCell>
       <TableCell>{event.recurring ? 'Yes' : 'No'}</TableCell>
       <TableCell align="right">
@@ -467,15 +584,16 @@ const SyllabusScanner = () => {
       variant="contained"
       size="large"
       onClick={handleAddAllEvents}
-      disabled={isAddingEvents}
+      disabled={isAddingEvents || !courseName}
       sx={{
-        bgcolor: '#1976d2',
+        bgcolor: selectedColor,
         color: 'white',
         px: 4,
         py: 1,
         fontSize: '16px',
         '&:hover': {
-          bgcolor: '#1565c0',
+          bgcolor: selectedColor,
+          opacity: 0.9
         }
       }}
     >
@@ -499,6 +617,47 @@ const SyllabusScanner = () => {
       }}>
         Syllabus Scanner
       </Typography>
+
+      <Box sx={{ mb: 4 }}>
+        <TextField
+          required
+          fullWidth
+          label="Course Name (e.g. COMP301)"
+          value={courseName}
+          onChange={(e) => setCourseName(e.target.value)}
+          sx={{ mb: 2 }}
+          error={!courseName}
+          helperText={!courseName ? "Course name is required" : ""}
+        />
+        
+        <FormControl fullWidth>
+          <InputLabel id="color-select-label">Event Color</InputLabel>
+          <Select
+            labelId="color-select-label"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}
+            label="Event Color"
+          >
+            {Object.entries(colors).map(([name, hex]) => (
+              <MenuItem key={hex} value={hex}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: hex,
+                      borderRadius: '50%',
+                      border: '2px solid #fff',
+                      boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Typography>{name}</Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       <UploadBox
         elevation={0}
@@ -590,7 +749,7 @@ const SyllabusScanner = () => {
         onClose={handleCloseError}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
+        <Alert onClose={handleCloseError} severity={error.includes('Successfully') ? 'success' : 'error'} sx={{ width: '100%' }}>
           {error}
         </Alert>
       </Snackbar>
