@@ -57,45 +57,30 @@ export default function SearchFilterEventDialog(accountId) {
      // Function to search for events
      const searchFilterEvent = async () => {
          try {
+             const token = sessionStorage.getItem('token');
+             let userId;
+
+             // For JWT tokens
+             const payload = JSON.parse(atob(token.split('.')[1]));
+             userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+
+             if (!userId) {
+               throw new Error('User ID not found in token');
+             }
+
              const response = await fetch(`http://localhost:3000/api/tag/search`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ "eventTitle" : eventTitle, "eventType" : eventType,
+               body: JSON.stringify({"userId" : userId, "eventTitle" : eventTitle, "eventType" : eventType,
                "eventTags" : eventTags, "filterOR" : filterOR }),
              });
 
              const foundEvents = await response.json();
-             //if (filterOR) {
-             //      foundEvents = await prisma.event.findMany({
-             //        where:  {
-             //          userId: accountId,
-             //          title: {
-             //            contains: eventTitle
-             //          },
-             //          type: eventType,
-             //          tags: {
-             //           hasSome: eventTags,
-             //          },
-             //        },
-             //      });
-             //    }
-             //else { //FilterAND
-             //      foundEvents = await prisma.event.findMany({
-             //         where:  {
-             //            userId: accountId,
-             //            title: {
-             //              contains: eventTitle
-             //            },
-             //           type: eventType,
-             //           tags: {
-             //            hasEvery: eventTags,
-             //           },
-             //         },
-             //       });
-             //}
              setEvents(foundEvents); // Set the events in state
-         } catch (error) {
-             console.error('Error searching for event:', error);
+             setEventTitle('');
+         }
+         catch (error) {
+            console.error('Error searching for event:', error);
          }
      }
 
@@ -109,7 +94,6 @@ export default function SearchFilterEventDialog(accountId) {
             <DialogContent>
                 <TextField
                     autoFocus
-                    required
                     margin="dense"
                     id="eventTitle"
                     name="eventTitle"
