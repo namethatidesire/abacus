@@ -15,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   username String @unique
   email String @unique
   password String
@@ -23,15 +23,34 @@ model User {
   timezone String @default("UTC")
 
   events Event[]
+  courses   Course[]
+}
+
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  color String
+
+  events Event[]
+}
+
+model TagList {
+  id String @id @default(uuid())
+  name String @unique
+  color String
+
+  events Event[]
 }
 
 model Event {
-  id Int @id @default(autoincrement())
-  userId Int
+  id String @id @default(uuid())
+  userId String
   title String
   date DateTime @default(now())
   recurring Boolean
   color String
+  type String // Currently can be an EVENT or TASK.
+  tags TagList[] // Tags for filtering
 
   // Possible new fields for future update
   description String?
@@ -39,4 +58,14 @@ model Event {
   end DateTime?
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id    String  @id @default(uuid())
+  name  String  @unique
+  tag   String  @unique
+  colour String 
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id]) // Each course is associated with one user
 }

@@ -66,7 +66,6 @@ function CalendarDays(props) {
                     <div 
                         key={index} 
                         className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
-                        onClick={() => props.createEvent(day)}
                     >
                         <p>{day.number}</p>
                         {dayEvents.map((event, eventIndex) => (

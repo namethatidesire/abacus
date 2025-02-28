@@ -7,6 +7,7 @@ import Navbar from './navbar.js';
 import { Typography } from "@mui/material";
 import { ArrowBack, ArrowForward } from "@mui/icons-material";
 import './style.css';
+import CreateEventDialog from "./create-event-dialog";
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -30,11 +31,37 @@ export default class Calendar extends Component {
         }
     }
 
-    componentDidMount() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const accountId = urlParams.get('accountId');
-        if (accountId) {
-            this.setState({ accountId: parseInt(accountId, 10) }, this.fetchEvents);
+    componentDidMount = async() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            alert('Missing token. Please log in again.');
+            // Redirect to login page Session expired
+            window.location.href = '/login';
+        }
+
+        try {
+            const response = await fetch(`api/account/authorize`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            console.log(data);
+            if (data.status === 200) {
+                const { userId } = data.decoded;
+                this.setState({ accountId: userId }, this.fetchEvents);
+            } else {
+                alert('Invalid token. Please log in again.');
+                // Redirect to login page Session expired  
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            alert('Error verifying token. Please log in again.');
+            // Redirect to login page Session expired  
+            window.location.href = '/login';
         }
     }
 
@@ -43,11 +70,13 @@ export default class Calendar extends Component {
         if (!accountId) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}/retrieve`);
+            const response = await fetch(`api/event/${accountId}`, {
+                method: 'GET'
+            });
             if (response.ok) {
                 const data = await response.json();
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const events = data.events.reduce((acc, event) => {
+                const events = data.reduce((acc, event) => {
                     const eventDate = new Date(event.date);
                     const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
                     const dateKey = localDate.toDateString();
@@ -68,6 +97,11 @@ export default class Calendar extends Component {
         } catch (error) {
             console.error('Error fetching events:', error);
         }
+    }
+
+    // Callback function to update events after creating a new event
+    updateEvents = () => {
+        this.fetchEvents();
     }
 
     // Function to change the current day
@@ -118,54 +152,6 @@ export default class Calendar extends Component {
         this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
     }
 
-    // Function to create an event
-    createEvent = async (day) => {
-        const { accountId } = this.state;
-
-        // Prompt the user for the event title, color, and time
-        const eventTitle = prompt("Enter event title:");
-        const eventColor = prompt("Enter event color (e.g., #FF0000):");
-        const eventTime = prompt("Enter event time (HH:MM):");
-        if (eventTitle && eventColor && eventTime) {
-            const localDate = new Date(day.date);
-            const utcDate = new Date(localDate.toISOString().split('T')[0] + 'T' + eventTime + ':00Z');
-            const newEvent = {
-                accountId,
-                title: eventTitle,
-                date: utcDate.toISOString(),
-                time: eventTime,
-                recurring: 'false',
-                color: eventColor
-            };
-
-            try {
-                const response = await fetch(`http://localhost:3000/event/${accountId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ newEvent }),
-                });
-
-                if (response.ok) {
-                    this.setState((prevState) => {
-                        const events = { ...prevState.events };
-                        const dateKey = new Date(day.date).toDateString();
-                        if (!events[dateKey]) {
-                            events[dateKey] = [];
-                        }
-                        events[dateKey].push(newEvent);
-                        return { events };
-                    });
-                } else {
-                    console.error('Failed to create event');
-                }
-            } catch (error) {
-                console.error('Error creating event:', error);
-            }
-        }
-    }
-
     render() {
         const { view, currentDay, events } = this.state;
         
@@ -208,6 +194,8 @@ export default class Calendar extends Component {
                         <button className="nav-button" onClick={this.nextMonth}>
                             <ArrowForward sx={{ fontSize: 40, color: '#000' }} />
                         </button>
+
+                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
                     </div>
 
                     {/* Calendar Body */}
