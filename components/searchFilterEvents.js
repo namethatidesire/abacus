@@ -19,11 +19,13 @@ import prisma from '../utils/db.js'
 
 export default function SearchFilterEventDialog(accountId) {
     const [open, setOpen] = React.useState(false);
-    //const [eventTitle, setEventTitle] = React.useState('');
+    const [eventTitle, setEventTitle] = React.useState('');
     //const [eventDateTime, setEventDateTime] = React.useState(dayjs());
     const [eventTags, setEventTags] = React.useState([]);
     const [eventType, setEventType] = React.useState('EVENT');
     const [filterOR, setAndOr] = React.useState(false); //Filter OR on tags. By default should be false.
+
+    const accountId = props.accountId;
 
     // Replace below line of code to fetch all of the logged in user's tags
     const userTags = ['CSC301', 'Personal', 'Work'];
@@ -54,6 +56,10 @@ export default function SearchFilterEventDialog(accountId) {
              if (filterOR) {
                    const events = await prisma.event.findMany({
                      where:  {
+                       userId: accountId
+                       title: {
+                         contains: eventTitle
+                       }
                        type: eventType,
                        tags: {
                         hasSome: eventTags,
@@ -64,6 +70,10 @@ export default function SearchFilterEventDialog(accountId) {
              else { //FilterAND
                    const events = await prisma.event.findMany({
                       where:  {
+                         userId: accountId
+                         title: {
+                           contains: eventTitle
+                         }
                         type: eventType,
                         tags: {
                          hasEvery: eventTags,
@@ -71,7 +81,6 @@ export default function SearchFilterEventDialog(accountId) {
                       },
                     });
              }
-             //TODO: Display events
          } catch (error) {
              console.error('Error searching for event:', error);
          }
@@ -85,19 +94,19 @@ export default function SearchFilterEventDialog(accountId) {
         <Dialog open={open} onClose={handleClose}>
             <DialogTitle>Search/Filter Events</DialogTitle>
             <DialogContent>
-                //<TextField
-                //    autoFocus
-                //    required
-                //    margin="dense"
-                //    id="eventTitle"
-                //    name="eventTitle"
-                //    label="Event Title"
-                //    type="string"
-                //    fullWidth
-                //    variant="standard"
-                //    value={eventTitle}
-                //    onChange={(e) => setEventTitle(e.target.value)}
-                ///>
+                <TextField
+                    autoFocus
+                    required
+                    margin="dense"
+                    id="eventTitle"
+                    name="eventTitle"
+                    label="Event Title"
+                    type="string"
+                    fullWidth
+                    variant="standard"
+                    value={eventTitle}
+                    onChange={(e) => setEventTitle(e.target.value)}
+                />
 
                 <FormControl fullWidth margin="dense">
                     <InputLabel id="eventTypeLabel">Event Type</InputLabel>
@@ -153,8 +162,11 @@ export default function SearchFilterEventDialog(accountId) {
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Cancel</Button>
-                <Button onClick={searchFilterEvent}>Create Event</Button>
+                <Button onClick={searchFilterEvent}>Search</Button>
             </DialogActions>
+            <ul>
+                {events.map((title, date) => <li key={event.id}>{event.title}    {event.date}</li>)}
+            </ul>
         </Dialog>
     </React.Fragment>
 }
