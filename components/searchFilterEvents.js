@@ -57,35 +57,42 @@ export default function SearchFilterEventDialog(accountId) {
      // Function to search for events
      const searchFilterEvent = async () => {
          try {
-             let foundEvents;
-             if (filterOR) {
-                   foundEvents = await prisma.event.findMany({
-                     where:  {
-                       userId: accountId,
-                       title: {
-                         contains: eventTitle
-                       },
-                       type: eventType,
-                       tags: {
-                        hasSome: eventTags,
-                       },
-                     },
-                   });
-                 }
-             else { //FilterAND
-                   foundEvents = await prisma.event.findMany({
-                      where:  {
-                         userId: accountId,
-                         title: {
-                           contains: eventTitle
-                         },
-                        type: eventType,
-                        tags: {
-                         hasEvery: eventTags,
-                        },
-                      },
-                    });
-             }
+             const response = await fetch(`http://localhost:3000/api/tag/search`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ "eventTitle" : eventTitle, "eventType" : eventType,
+               "eventTags" : eventTags, "filterOR" : filterOR }),
+             });
+
+             const foundEvents = await response.json();
+             //if (filterOR) {
+             //      foundEvents = await prisma.event.findMany({
+             //        where:  {
+             //          userId: accountId,
+             //          title: {
+             //            contains: eventTitle
+             //          },
+             //          type: eventType,
+             //          tags: {
+             //           hasSome: eventTags,
+             //          },
+             //        },
+             //      });
+             //    }
+             //else { //FilterAND
+             //      foundEvents = await prisma.event.findMany({
+             //         where:  {
+             //            userId: accountId,
+             //            title: {
+             //              contains: eventTitle
+             //            },
+             //           type: eventType,
+             //           tags: {
+             //            hasEvery: eventTags,
+             //           },
+             //         },
+             //       });
+             //}
              setEvents(foundEvents); // Set the events in state
          } catch (error) {
              console.error('Error searching for event:', error);
