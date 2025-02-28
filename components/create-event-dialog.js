@@ -12,6 +12,7 @@ import {CirclePicker} from "react-color";
 import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import { Description } from "@mui/icons-material";
 
 // @param props: accountId, callback
 // accountId: the id of the user creating the event
@@ -47,7 +48,11 @@ export default function CreateEventDialog(props) {
             date: eventDateTime.toISOString(),
             time: eventDateTime.format('HH:mm'),
             recurring: false,
-            color: eventColor
+            color: eventColor, 
+            description: null,
+            start: null,
+            end: null, 
+            type: "EVENT"
         };
 
         try {

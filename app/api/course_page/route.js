@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { name, tag, userId } = await request.json();
+    const { name, tag, userId, colour } = await request.json();
 
     // Ensure all fields are filled out
-    if (!name || !tag || !userId) {
+    if (!name || !tag || !userId || !colour) {
       return NextResponse.json({ message: "Please fill out all fields" }, { status: 400 });
     }
 
@@ -29,7 +29,8 @@ export async function POST(request) {
       data: {
         name,
         tag,
-        userId // Ensure userId is correctly referenced here
+        userId, // Ensure userId is correctly referenced here
+        colour
       },
     });
 
