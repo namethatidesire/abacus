@@ -11,11 +11,15 @@ import {
     MenuItem,
     Chip,
     InputLabel,
-    FormControl
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    FormControlLabel,
+    Radio
 } from "@mui/material";
 import {CirclePicker} from "react-color";
 import dayjs from "dayjs";
-import prisma from '../utils/db.js'
+import { prisma } from "@/utils/db";
 
 export default function SearchFilterEventDialog(accountId) {
     const [open, setOpen] = React.useState(false);
@@ -24,8 +28,8 @@ export default function SearchFilterEventDialog(accountId) {
     const [eventTags, setEventTags] = React.useState([]);
     const [eventType, setEventType] = React.useState('EVENT');
     const [filterOR, setAndOr] = React.useState(false); //Filter OR on tags. By default should be false.
-
-    const accountId = props.accountId;
+    const [events, setEvents] = React.useState([]); // Add state for events
+    //let accountId = props.accountId;
 
     // Replace below line of code to fetch all of the logged in user's tags
     const userTags = ['CSC301', 'Personal', 'Work'];
@@ -46,43 +50,37 @@ export default function SearchFilterEventDialog(accountId) {
         setEventType(event.target.value);
     };
 
-    const handleAndOr = () => {
-        setAndOr()
+    const handleAndOr = (event) => {
+        setAndOr(event.target.value === "true");
     };
 
      // Function to search for events
      const searchFilterEvent = async () => {
          try {
-             if (filterOR) {
-                   const events = await prisma.event.findMany({
-                     where:  {
-                       userId: accountId
-                       title: {
-                         contains: eventTitle
-                       }
-                       type: eventType,
-                       tags: {
-                        hasSome: eventTags,
-                       },
-                     },
-                   });
-                 }
-             else { //FilterAND
-                   const events = await prisma.event.findMany({
-                      where:  {
-                         userId: accountId
-                         title: {
-                           contains: eventTitle
-                         }
-                        type: eventType,
-                        tags: {
-                         hasEvery: eventTags,
-                        },
-                      },
-                    });
+             const token = sessionStorage.getItem('token');
+             let userId;
+
+             // For JWT tokens
+             const payload = JSON.parse(atob(token.split('.')[1]));
+             userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+
+             if (!userId) {
+               throw new Error('User ID not found in token');
              }
-         } catch (error) {
-             console.error('Error searching for event:', error);
+
+             const response = await fetch(`http://localhost:3000/api/tag/search`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({"userId" : userId, "eventTitle" : eventTitle, "eventType" : eventType,
+               "eventTags" : eventTags, "filterOR" : filterOR }),
+             });
+
+             const foundEvents = await response.json();
+             setEvents(foundEvents); // Set the events in state
+             setEventTitle('');
+         }
+         catch (error) {
+            console.error('Error searching for event:', error);
          }
      }
 
@@ -96,7 +94,6 @@ export default function SearchFilterEventDialog(accountId) {
             <DialogContent>
                 <TextField
                     autoFocus
-                    required
                     margin="dense"
                     id="eventTitle"
                     name="eventTitle"
@@ -151,11 +148,11 @@ export default function SearchFilterEventDialog(accountId) {
                   <RadioGroup
                     aria-labelledby="filter-and-or-radio-buttons-group"
                     name="controlled-radio-buttons-group"
-                    value={filterOR}
+                    value={filterOR.toString()}
                     onChange={handleAndOr}
                   >
-                    <FormControlLabel value=true control={<Radio />} label="AND" />
-                    <FormControlLabel value=false control={<Radio />} label="OR" />
+                    <FormControlLabel value="true" control={<Radio />} label="OR" />
+                    <FormControlLabel value="false" control={<Radio />} label="AND" />
                   </RadioGroup>
                 </FormControl>
 
@@ -164,9 +161,18 @@ export default function SearchFilterEventDialog(accountId) {
                 <Button onClick={handleClose}>Cancel</Button>
                 <Button onClick={searchFilterEvent}>Search</Button>
             </DialogActions>
-            <ul>
-                {events.map((title, date) => <li key={event.id}>{event.title}    {event.date}</li>)}
-            </ul>
+            {events.length > 0 && (
+                <div style={{ padding: '0 24px 24px 24px' }}>
+                    <h4>Search Results:</h4>
+                    <ul>
+                        {events.map((event) => (
+                            <li key={event.id}>
+                                {event.title} - {new Date(event.date).toLocaleDateString()}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </Dialog>
     </React.Fragment>
 }
