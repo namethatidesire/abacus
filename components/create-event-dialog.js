@@ -13,11 +13,16 @@ import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
-export default function CreateEventDialog(accountId) {
+// @param props: accountId, callback
+// accountId: the id of the user creating the event
+// callback: a function to call after creating the event (e.g. to update the calendar)
+export default function CreateEventDialog(props) {
     const [open, setOpen] = React.useState(false);
     const [eventColor, setEventColor] = React.useState('#FF0000');
     const [eventTitle, setEventTitle] = React.useState('');
     const [eventDateTime, setEventDateTime] = React.useState(dayjs());
+
+    const accountId = props.accountId;
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -28,46 +33,40 @@ export default function CreateEventDialog(accountId) {
     };
 
     // Function to create an event
-    const createEvent = async () => {
+    const createEvent = async function() {
+
+        console.log(eventTitle);
 
         // Prompt the user for the event title, color, and time
         // const eventTitle = prompt("Enter event title:");
         // const eventColor = prompt("Enter event color (e.g., #FF0000):");
         // const eventTime = prompt("Enter event time (HH:MM):");
         const newEvent = {
-            accountId,
+            userId: accountId,
             title: eventTitle,
             date: eventDateTime.toISOString(),
             time: eventDateTime.format('HH:mm'),
-            recurring: 'false',
+            recurring: false,
             color: eventColor
         };
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}`, {
+            const response = await fetch(`api/event/${accountId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ newEvent }),
+                body: JSON.stringify(newEvent),
             });
 
-            if (response.ok) {
-                this.setState((prevState) => {
-                    const events = { ...prevState.events };
-                    const dateKey = eventDateTime.format('YYYY-MM-DD');
-                    if (!events[dateKey]) {
-                        events[dateKey] = [];
-                    }
-                    events[dateKey].push(newEvent);
-                    return { events };
-                });
-            } else {
+            if (!response.ok) {
                 console.error('Failed to create event');
             }
         } catch (error) {
             console.error('Error creating event:', error);
         }
+        props.callback();
+        handleClose();
     }
 
     return <React.Fragment>

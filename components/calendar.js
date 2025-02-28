@@ -31,11 +31,37 @@ export default class Calendar extends Component {
         }
     }
 
-    componentDidMount() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const accountId = urlParams.get('accountId');
-        if (accountId) {
-            this.setState({ accountId: parseInt(accountId, 10) }, this.fetchEvents);
+    componentDidMount = async() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            alert('Missing token. Please log in again.');
+            // Redirect to login page Session expired
+            window.location.href = '/login';
+        }
+
+        try {
+            const response = await fetch(`api/account/authorize`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            console.log(data);
+            if (data.status === 200) {
+                const { userId } = data.decoded;
+                this.setState({ accountId: userId }, this.fetchEvents);
+            } else {
+                alert('Invalid token. Please log in again.');
+                // Redirect to login page Session expired  
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            alert('Error verifying token. Please log in again.');
+            // Redirect to login page Session expired  
+            window.location.href = '/login';
         }
     }
 
@@ -44,13 +70,13 @@ export default class Calendar extends Component {
         if (!accountId) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/event/${accountId}`, {
+            const response = await fetch(`api/event/${accountId}`, {
                 method: 'GET'
             });
             if (response.ok) {
                 const data = await response.json();
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const events = data.events.reduce((acc, event) => {
+                const events = data.reduce((acc, event) => {
                     const eventDate = new Date(event.date);
                     const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
                     const dateKey = localDate.toDateString();
@@ -71,6 +97,11 @@ export default class Calendar extends Component {
         } catch (error) {
             console.error('Error fetching events:', error);
         }
+    }
+
+    // Callback function to update events after creating a new event
+    updateEvents = () => {
+        this.fetchEvents();
     }
 
     // Function to change the current day
@@ -164,7 +195,7 @@ export default class Calendar extends Component {
                             <ArrowForward sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
-                        <CreateEventDialog accountId={this.state.accountId}/>
+                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
                     </div>
 
                     {/* Calendar Body */}
