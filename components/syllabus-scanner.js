@@ -88,44 +88,44 @@ const SyllabusScanner = () => {
     );
   };
 
-  useEffect(() => {
-    const verifyToken = async () => {
-      const token = sessionStorage.getItem('token');
-      if (!token) {
-        alert('Missing token. Please log in again.');
-        // Redirect to login page Session expired
-        window.location.href = '/login';
-        return;
-      }
+  // useEffect(() => {
+  //   const verifyToken = async () => {
+  //     const token = sessionStorage.getItem('token');
+  //     if (!token) {
+  //       alert('Missing token. Please log in again.');
+  //       // Redirect to login page Session expired
+  //       window.location.href = '/login';
+  //       return;
+  //     }
 
-      try {
-        const response = await fetch(`http://localhost:3000/api/account/authorize`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
+  //     try {
+  //       const response = await fetch(`http://localhost:3000/api/account/authorize`, {
+  //         method: 'GET',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'Authorization': `Bearer ${token}`
+  //         }
+  //       });
 
-        const data = await response.json();
-        console.log(data);
-        if (data.status === 200) {
-          const { userId } = data.decoded;
-          setAccountId(userId);
-        } else {
-          alert('Invalid token. Please log in again.');
-          // Redirect to login page Session expired  
-          window.location.href = '/login';
-        }
-      } catch (error) {
-        alert('Error verifying token. Please log in again.');
-        // Redirect to login page Session expired  
-        window.location.href = '/login';
-      }
-    };
+  //       const data = await response.json();
+  //       console.log(data);
+  //       if (data.status === 200) {
+  //         const { userId } = data.decoded;
+  //         setAccountId(userId);
+  //       } else {
+  //         alert('Invalid token. Please log in again.');
+  //         // Redirect to login page Session expired  
+  //         window.location.href = '/login';
+  //       }
+  //     } catch (error) {
+  //       alert('Error verifying token. Please log in again.');
+  //       // Redirect to login page Session expired  
+  //       window.location.href = '/login';
+  //     }
+  //   };
 
-    verifyToken();
-  }, []);
+  //   verifyToken();
+  // }, []);
 
   const handleAddAllEvents = useCallback(async () => {
     if (!events?.length || !courseName) {
