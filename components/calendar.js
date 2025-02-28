@@ -98,14 +98,8 @@ export default class Calendar extends Component {
         }
     }
     
-    
-    clearEvents = () => {
-        this.setState({events: {}});
-    }
-
     // Callback function to update events after creating a new event
     updateEvents = () => {
-        this.clearEvents();
         this.fetchEvents();
     }
 
