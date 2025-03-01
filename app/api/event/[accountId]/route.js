@@ -57,9 +57,9 @@ export async function PUT(request) {
   }
 }
 
-export async function GET(request) {
+export async function GET(request, { params }) {
 	try {
-		const { userId } = request.query;
+		const userId = (await params).accountId;
 		const events = await prisma.event.findMany({
 		where: {
 			userId

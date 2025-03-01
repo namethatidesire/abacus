@@ -1,0 +1,25 @@
+.details {
+    background: #b1cadf;
+    border-radius: 5px;
+    margin: 10px;
+}
+.summary {
+    /* background-color: #2196F3; */
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+}   
+.summary::after {
+    content: '';
+    width: 0; 
+    height: 0; 
+    border-top: 10px solid #15171b;
+    border-inline: 7px solid transparent;
+    transition: 0.2s;
+  }
+.article {
+    padding: 10px;
+    border-radius: 5px;
+}
