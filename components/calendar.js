@@ -8,6 +8,7 @@ import { Typography } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
+import SearchFilterEventsDialog from "./searchFilterEvents";
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -195,6 +196,7 @@ export default class Calendar extends Component {
                         </button>
 
                         <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
+                        <SearchFilterEventsDialog accountId={this.state.accountId}/>
                     </div>
 
                     {/* Calendar Body */}

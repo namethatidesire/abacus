@@ -1,51 +1,27 @@
 "use client";
 
+import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/navbar.js'; 
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Container,
-  Paper,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+// import eventServiceConfig from '../../configs/eventservice.json';
 
 const Dashboard = () => {
-  const [accountId, setAccountId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState('beloved user');
   const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); // Add loading state
   const today = new Date().toLocaleDateString();
 
   useEffect(() => {
-    const verifyToken = async () => {
+    const fetchUserId = async () => {
       const token = sessionStorage.getItem('token');
       if (!token) {
         alert('Missing token. Please log in again.');
-        // Redirect to login page Session expired
-        window.location.href = '/login';
+        window.location.href = '/login'; // Redirect to login page
         return;
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/api/account/authorize`, {
+        const response = await fetch(`api/account/authorize`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -54,142 +30,88 @@ const Dashboard = () => {
         });
 
         const data = await response.json();
+        console.log(data);
         if (data.status === 200) {
-          const { userId, username } = data.decoded;
-          //setUsername(username); // CARL -- COMMENT OUT IF USERNAME NO WORK
-          setAccountId(userId);
+          const { userId } = data.decoded;
+          setUserId(userId); // Set the user ID in state
         } else {
           alert('Invalid token. Please log in again.');
-          // Redirect to login page Session expired  
-          window.location.href = '/login';
+          window.location.href = '/login'; // Redirect to login page
         }
       } catch (error) {
         alert('Error verifying token. Please log in again.');
-        // Redirect to login page Session expired  
-        window.location.href = '/login';
+        window.location.href = '/login'; // Redirect to login page
       }
     };
 
-    verifyToken();
+    fetchUserId();
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
       try {
-        // Check if accountId is valid
-        if (!accountId) {
-          console.log('Account ID not available yet');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('Fetching events for account ID:', accountId);
-        
-        // Use token for authorization
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-        
-        const eventsResponse = await fetch(`http://localhost:3000/api/event/${accountId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+        const getCurrentUser = await fetch(`http://localhost:3000/api/account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountId: userId }) // Correct parameter name
         });
-        
-        if (!eventsResponse.ok) {
-          const errorText = await eventsResponse.text();
-          console.error('API error response:', errorText);
-          throw new Error(`HTTP error! Status: ${eventsResponse.status}`);
-        }
-        
+        const currentUserData = await getCurrentUser.json();
+        const eventsResponse = await fetch(`http://localhost:3000/api/event/${userId}`);
         const eventData = await eventsResponse.json();
-        console.log('Fetched event data:', eventData);
-        
-        // Check if events is in the expected format
-        if (eventData && Array.isArray(eventData.events)) {
-          setEvents(eventData.events);
-        } else if (Array.isArray(eventData)) {
-          // Handle case where API returns array directly
+        console.log(eventData);
+        setUsername(currentUserData.account.username);
+        if (eventData) {
           setEvents(eventData);
-        } else if (eventData && typeof eventData === 'object') {
-          // Try to extract events from response object
-          const possibleEvents = Object.values(eventData).find(val => Array.isArray(val));
-          if (possibleEvents) {
-            setEvents(possibleEvents);
-          } else {
-            console.error('Could not find events array in response:', eventData);
-            setEvents([]);
-          }
-        } else {
-          console.error('Unexpected event data format:', eventData);
-          setEvents([]);
         }
+        setLoading(false); // Set loading to false after data is fetched
       } catch (error) {
-        console.error('Error fetching events:', error);
-        setError(error.message || 'Failed to fetch events');
-        setEvents([]);
-      } finally {
-        setIsLoading(false);
+        console.error('Error fetching data:', error);
+        setLoading(false); // Set loading to false in case of error
       }
     };
 
-    if (accountId) {
+    if (userId) {
       fetchData();
     }
-  }, [accountId]);
+  }, [userId]);
+
+  if (loading) {
+    return <div>Loading...</div>; // Render loading state
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-      <div style={{ display: 'flex', flex: 1 }}>
+    <div>
+      <div>
+        <Navbar />
+        {/* Other content can go here */}
+      </div>
+      <div style={{ 
+        width: '33%', 
+        backgroundColor: '#d3d3d3', 
+        padding: '20px', 
+        height: '100vh',
+        color: '#333' // Dark gray color
+      }}>
+        <p style={{ fontSize: '3em', margin: '20px 0 0 0' }}>Dashboard</p>
+        <p style={{ fontSize: '2em'}}>Welcome, {username}.</p>
+        <p style={{ fontSize: '1em', margin: '0 0 20px 0' }}>{today}</p> 
         <div style={{ 
-          width: '33%', 
-          backgroundColor: '#d3d3d3', 
-          padding: '20px', 
-          minHeight: 'calc(100vh - 64px)', // Adjusting for navbar height
-          color: '#333', // Dark gray color
-          overflow: 'auto' // Add scrolling if content is too large
+          backgroundColor: '#f0f0f0', 
+          borderRadius: '10px', 
+          padding: '10px',
         }}>
-          <Typography variant="h2" style={{ fontSize: '3em', margin: '20px 0 0 0' }}>Dashboard</Typography>
-          <Typography variant="h3" style={{ fontSize: '2em' }}>Welcome, {username}.</Typography>
-          <Typography variant="body1" style={{ fontSize: '1em', margin: '0 0 20px 0' }}>{today}</Typography> 
-          <Paper style={{ 
-            backgroundColor: '#f0f0f0', 
-            borderRadius: '10px', 
-            padding: '15px',
-          }}>
-            <Typography variant="h5">Today's Events</Typography>
-            {isLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-                <CircularProgress size={24} />
-              </div>
-            ) : error ? (
-              <Alert severity="error" style={{ marginTop: '10px' }}>
-                {error}
-              </Alert>
-            ) : events.length > 0 ? (
-              <ul style={{ paddingLeft: '20px' }}>
-                {events.map((event, index) => (
-                  <li key={event.id || index}>
-                    {event.time ? `[${event.time}]` : ''} - {event.name || event.title || event.description || 'Unnamed event'}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Typography variant="body1">No events planned for today.</Typography>
-            )}
-          </Paper>
-        </div>
-        <div style={{ flex: 1, padding: '20px' }}>
-          {/* Main content area */}
-          <Typography variant="h4">Your Content</Typography>
-          <Typography variant="body1">Additional dashboard content goes here.</Typography>
+          <h2>Today's Events</h2>
+          {events.length > 0 ? (
+            <ul>
+              {events.map(event => (
+                <li key={event.id}>
+                  [{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}] - {event.title}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No events planned for today.</p>
+          )}
         </div>
       </div>
     </div>
