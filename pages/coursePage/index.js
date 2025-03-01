@@ -6,13 +6,52 @@ const CoursePage = () => {
   const [message, setMessage] = useState('');
   const [createdCourse, setCreatedCourse] = useState(null);
   const [courses, setCourses] = useState([]);
-  const userId = "1"; // TODO: REPLACE WITH CORRECT USER ID LOGIC
+  const [userId, setUserId] = useState(null); // State to store the user ID
+
+  // Fetch user ID and verify token
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        alert('Missing token. Please log in again.');
+        window.location.href = '/login'; // Redirect to login page
+        return;
+      }
+
+      try {
+        const response = await fetch(`api/account/authorize`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        console.log(data);
+        if (data.status === 200) {
+          const { userId } = data.decoded;
+          setUserId(userId); // Set the user ID in state
+        } else {
+          alert('Invalid token. Please log in again.');
+          window.location.href = '/login'; // Redirect to login page
+        }
+      } catch (error) {
+        alert('Error verifying token. Please log in again.');
+        window.location.href = '/login'; // Redirect to login page
+      }
+    };
+
+    fetchUserId();
+  }, []);
 
   // Fetch courses for the user
   useEffect(() => {
+    if (!userId) return; // Wait until userId is set
+
     const fetchCourses = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/course_page?userId=${userId}`); // TODO: REPLACE WITH CORRECT USER ID LOGIC
+        const response = await fetch(`http://localhost:3000/api/course_page?userId=${userId}`);
         if (response.status === 200) {
           const data = await response.json();
           setCourses(data);
@@ -28,7 +67,7 @@ const CoursePage = () => {
     };
 
     fetchCourses();
-  }, []);
+  }, [userId]); // Depend on userId to refetch courses when it changes
 
   // Create a new course
   const createCourse = async (event) => {
@@ -36,12 +75,13 @@ const CoursePage = () => {
 
     const name = prompt("Enter course name:");
     const tag = prompt("Enter course tag (e.g., CSC301):");
+    const colour = prompt("Enter colour (e.g., #FF0000):");
 
     try {
       const response = await fetch(`http://localhost:3000/api/course_page`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, tag, userId }),
+        body: JSON.stringify({ name, tag, colour, userId }),
       });
 
       if (response.status === 201) {
@@ -49,7 +89,7 @@ const CoursePage = () => {
         console.log(data);
         setMessage('Course created successfully!');
         setCreatedCourse(data); // Update the state with the newly created course
-        setCourses([...courses, data]); // Add the new course to the list of courses
+        setCourses([...courses, { ...data, events: [] }]); // Add the new course to the list of courses
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData);
@@ -62,7 +102,6 @@ const CoursePage = () => {
   };
 
   const deleteCourse = async (courseId) => {
-    // TODO: REPLACE WITH CORRECT USER ID LOGIC
     try {
       const response = await fetch(`http://localhost:3000/api/course_page?id=${courseId}`, {
         method: 'DELETE',
@@ -90,25 +129,17 @@ const CoursePage = () => {
       {message && <p>{message}</p>}
       {/* Creating each course */}
       {courses.map((course) => (
-        <details className={styles.details} key={course.id}>
-
+        <details className={styles.details} key={course.id} >
           {/* Title of course dropdown */}
-          <summary className={styles.summary}>{course.name}</summary>
-
+          <summary className={styles.summary} style={{ background: course.colour }}>{course.name}</summary>
           {/* Body of course dropdown */}
           <article className={styles.article}>
-
-            {/* SPECIFICALLY FOR DEBUGGING */}
-            {/* <p>Tag: {course.tag}</p>  */}
-
             {/* Event information */}
-            {/* <p>Events:</p> */}
             <ul>
               {course.events.map((event) => (
                 <li key={event.id}>{event.title} - {event.date}</li>
               ))}
             </ul>
-
             {/* Delete course button */}
             <button onClick={() => deleteCourse(course.id)}>Delete Course</button>
           </article>

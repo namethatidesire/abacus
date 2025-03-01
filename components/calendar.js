@@ -5,9 +5,10 @@ import CalendarDays from './calendar-days.js';
 import WeeklyView from './weekly-view.js';
 import Navbar from './navbar.js';
 import { Typography } from "@mui/material";
-import { ArrowBack, ArrowForward } from "@mui/icons-material";
+import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
+import SearchFilterEventsDialog from "./searchFilterEvents";
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -49,7 +50,6 @@ export default class Calendar extends Component {
             });
 
             const data = await response.json();
-            console.log(data);
             if (data.status === 200) {
                 const { userId } = data.decoded;
                 this.setState({ accountId: userId }, this.fetchEvents);
@@ -98,7 +98,7 @@ export default class Calendar extends Component {
             console.error('Error fetching events:', error);
         }
     }
-
+    
     // Callback function to update events after creating a new event
     updateEvents = () => {
         this.fetchEvents();
@@ -157,13 +157,13 @@ export default class Calendar extends Component {
         
         return (
             <div>
-                <Navbar view={view} />
+                <Navbar />
 
                 <div className="calendar">
                     {/* Calendar Header */}
                     <div className="calendar-header">
                         <button className="nav-button" onClick={this.previousMonth}>
-                            <ArrowBack sx={{ fontSize: 40, color: '#000' }} />
+                            <ArrowBackIos sx={{ fontSize: 40, color: '#000' }} />
                         </button>
                         
                         <div className="title-container">
@@ -192,10 +192,11 @@ export default class Calendar extends Component {
                         </div>
                         
                         <button className="nav-button" onClick={this.nextMonth}>
-                            <ArrowForward sx={{ fontSize: 40, color: '#000' }} />
+                            <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
                         <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
+                        <SearchFilterEventsDialog accountId={this.state.accountId}/>
                     </div>
 
                     {/* Calendar Body */}

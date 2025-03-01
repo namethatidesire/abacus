@@ -59,7 +59,7 @@ export async function PUT(request) {
 
 export async function GET(request, { params }) {
 	try {
-		const { userId } = (await params).accountId;
+		const userId = (await params).accountId;
 		const events = await prisma.event.findMany({
 		where: {
 			userId
