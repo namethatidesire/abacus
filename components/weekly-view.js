@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { Typography } from "@mui/material";
+import ShowEventDialog from "./show-event-dialog";
 
 function WeeklyView({ currentDay, events }) {
     // Get the start of the week (Sunday)
@@ -45,14 +46,16 @@ function WeeklyView({ currentDay, events }) {
                             </div>
                             <div className="day-events">
                                 {dayEvents.map((event, eventIndex) => (
-                                    <div 
-                                        key={eventIndex}
-                                        className="week-event"
-                                        style={{ backgroundColor: event.color }}
-                                    >
-                                        <span className="event-time">{event.time}</span>
-                                        <span className="event-title">{event.title}</span>
-                                    </div>
+                                    <ShowEventDialog event={event}>
+                                        <div
+                                            key={eventIndex}
+                                            className="week-event"
+                                            style={{ backgroundColor: event.color }}
+                                        >
+                                            <span className="event-time">{event.time}</span>
+                                            <span className="event-title">{event.title}</span>
+                                        </div>
+                                    </ShowEventDialog>
                                 ))}
                             </div>
                         </div>

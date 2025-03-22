@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import ShowEventDialog from "./show-event-dialog";
 
 function CalendarDays(props) {
     const firstDayOfMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 1);
@@ -74,7 +75,9 @@ function CalendarDays(props) {
                                 className="event" 
                                 style={{ backgroundColor: event.color }}
                             >
-                                {event.title}
+                                <ShowEventDialog event={event}>
+                                    {event.title}
+                                </ShowEventDialog>
                             </div>
                         ))}
                     </div>
