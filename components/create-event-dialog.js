@@ -23,7 +23,7 @@ export default function CreateEventDialog(props) {
     const [eventColor, setEventColor] = React.useState('#FF0000');
     const [eventTitle, setEventTitle] = React.useState('');
     const [eventDateTime, setEventDateTime] = React.useState(dayjs());
-    const [eventEndDateTime, setEventEndDateTime] = React.useState(null);
+    const [eventEndDateTime, setEventEndDateTime] = React.useState(dayjs());
     const [eventDescription, setEventDescription] = React.useState('');
     const [eventRecurring, setEventRecurring] = React.useState('None');
     const [eventReminder, setEventReminder] = React.useState('None');
@@ -51,7 +51,7 @@ export default function CreateEventDialog(props) {
             recurring: eventRecurring,
             color: eventColor, 
             description: eventDescription,
-            endDate: null,
+            endDate: eventEndDateTime.toISOString(),
             type: "EVENT",
             reminder: eventReminder
         };
@@ -107,7 +107,7 @@ export default function CreateEventDialog(props) {
                             onChange={(newValue) => setEventDateTime(newValue)}
                         />
                         <DateTimePicker
-                            label={"Event End Time (Optional):"}
+                            label={"Event End Time:"}
                             value={eventEndDateTime}
                             onChange={(newValue) => setEventEndDateTime(newValue)}
                         />
@@ -121,7 +121,7 @@ export default function CreateEventDialog(props) {
                     onChange={(e) => setEventDescription(e.target.value)}
                 />
                 <div>
-                    <FormControl margin="dense" sx={{m:1, minWidth: 120}}>
+                    {/*<FormControl margin="dense" sx={{m:1, minWidth: 120}}>
                         <InputLabel id="recurring-select-label">Recurring</InputLabel>
                         <Select
                             variant="outlined"
@@ -136,7 +136,7 @@ export default function CreateEventDialog(props) {
                             <MenuItem value="Monthly">Monthly</MenuItem>
                             <MenuItem value="Yearly">Yearly</MenuItem>
                         </Select>
-                    </FormControl>
+                    </FormControl>*/}
                     <FormControl margin="dense" sx={{m:1, minWidth: 120}}>
                         <InputLabel id="reminder-select-label">Reminder</InputLabel>
                         <Select
