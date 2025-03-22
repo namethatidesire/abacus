@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import SearchFilterEventsDialog from '../../components/searchFilterEvents'; // Adjust the import path as needed
 
