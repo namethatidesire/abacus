@@ -1,6 +1,7 @@
 import { prisma } from "@/utils/db";
 import { NextResponse } from "next/server";
 import { hashPassword } from "@/utils/auth";
+import { describe } from "node:test";
 
 // app/api/signup/route.js
 export async function POST(request) {
@@ -30,6 +31,16 @@ export async function POST(request) {
       select: {
         username: true,
         email: true,
+      },
+    });
+
+    const newCalendar = await prisma.calendar.create({
+      data: {
+        ownerId: newUser.id,
+        name: "My Calendar",
+        description: "The default calendar.",
+        main: true,
+        events: [],
       },
     });
 

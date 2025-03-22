@@ -24,6 +24,7 @@ model User {
 
   events Event[]
   courses   Course[]
+  calendars Calendar[]
 }
 
 model Tag {
@@ -50,6 +51,20 @@ model Event {
   end DateTime?
 
   user User @relation(fields: [userId], references: [id])
+  calendar Calendar[]
+}
+
+model Calendar {
+  id String @id @default(uuid())
+  ownerId String
+  name String @default("CalendarName")
+  description String @default("No description.")
+  color String
+  main Boolean @default(false)
+  shared Boolean @default(false)
+
+  events Event[]
+  users User[]
 }
 
 model Course {
