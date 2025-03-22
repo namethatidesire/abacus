@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Calendar from '../../components/calendar'; // Adjust the import path as needed
 import Navbar from '../../components/navbar';
