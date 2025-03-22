@@ -73,7 +73,8 @@ function CalendarDays(props) {
                                 key={eventIndex} 
                                 className="event" 
                                 style={{ backgroundColor: event.color }}
-                            >
+                                onClick={() => props.onEventClick(event)} // Handle event click
+                            p>
                                 {event.title}
                             </div>
                         ))}

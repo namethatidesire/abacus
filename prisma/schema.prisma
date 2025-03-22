@@ -46,7 +46,7 @@ model Event {
   tags Tag[] // Tags for filtering
 
   // New fields for tracking task completion
-  estimatedTime Int? // Estimated time in minutes
+  estimatedTime Int? // Estimated time in hours
   difficulty Int? // Difficulty level (1-5)
 
   // Possible new fields for future update

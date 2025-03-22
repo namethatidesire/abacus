@@ -4,7 +4,7 @@ import { Crimson_Pro } from 'next/font/google';
 import CalendarDays from './calendar-days.js';
 import WeeklyView from './weekly-view.js';
 import Navbar from './navbar.js';
-import { Typography } from "@mui/material";
+import { Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
@@ -28,7 +28,9 @@ export default class Calendar extends Component {
             currentDay: new Date(),
             events: {},
             accountId: null,
-            view: 'month' // 'month' or 'week'
+            view: 'month', // 'month' or 'week'
+            selectedEvent: null, // Add state for selected event
+            dialogOpen: false // Add state for dialog visibility
         }
     }
 
@@ -151,9 +153,20 @@ export default class Calendar extends Component {
         const currentDay = Math.min(this.state.currentDay.getDate(), maxDay);
         this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
     }
+    
+    // Function to handle event click
+    handleEventClick = (event) => {
+        this.setState({ selectedEvent: event, dialogOpen: true });
+    }
+
+    // Function to close the dialog
+    handleCloseDialog = () => {
+        this.setState({ dialogOpen: false, selectedEvent: null });
+    }
+
 
     render() {
-        const { view, currentDay, events } = this.state;
+        const { view, currentDay, events, selectedEvent, dialogOpen } = this.state;
         
         return (
             <div>
@@ -223,16 +236,38 @@ export default class Calendar extends Component {
                                     changeCurrentDay={this.changeCurrentDay} 
                                     createEvent={this.createEvent} 
                                     events={events} 
+                                    onEventClick={this.handleEventClick} // Pass the event click handler
                                 />
                             </>
                         ) : (
                             <WeeklyView 
                                 currentDay={currentDay}
                                 events={events}
+                                onEventClick={this.handleEventClick} // Pass the event click handler
                             />
                         )}
                     </div>
                 </div>
+                {/* Event Details Dialog */}
+                <Dialog open={dialogOpen} onClose={this.handleCloseDialog}>
+                    <DialogTitle>Event Details</DialogTitle>
+                    <DialogContent>
+                        {selectedEvent && (
+                            <>
+                                <Typography variant="h6">{selectedEvent.title}</Typography>
+                                <Typography>Date: {selectedEvent.date}</Typography>
+                                <Typography>Time: {selectedEvent.time}</Typography>
+                                <Typography>Estimated Time: {selectedEvent.estimatedTime} hours</Typography>
+                                <Typography>Difficulty: {selectedEvent.difficulty}</Typography>
+                                <Typography>Recurring: {selectedEvent.recurring ? 'Yes' : 'No'}</Typography>
+                                <Typography>Color: <span style={{ backgroundColor: selectedEvent.color, padding: '0 10px' }}></span></Typography>
+                            </>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handleCloseDialog}>Close</Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         );
     }

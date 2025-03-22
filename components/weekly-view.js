@@ -49,6 +49,7 @@ function WeeklyView({ currentDay, events }) {
                                         key={eventIndex}
                                         className="week-event"
                                         style={{ backgroundColor: event.color }}
+                                        onClick={() => onEventClick(event)} // Handle event click
                                     >
                                         <span className="event-time">{event.time}</span>
                                         <span className="event-title">{event.title}</span>
