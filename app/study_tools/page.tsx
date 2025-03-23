@@ -3,12 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import PomodoroTimer from '../../components/pomodoro-timer';
-// import TodoList from '../../components/todo-list';
+import TodoList from '../../components/todolist';
 import Navbar from '../../components/navbar';
+
+interface Task {
+    text: string;
+    completed: boolean;
+}
 
 const StudyTools = () => {
     const [accountId, setAccountId] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [openTodoList, setOpenTodoList] = useState(false);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [newTask, setNewTask] = useState('');
 
     // Fetch the account ID from session storage or other source
     useEffect(() => {
@@ -59,7 +67,8 @@ const StudyTools = () => {
         <div>
             <Navbar />
             <div style={{ padding: '20px' }}>
-                <h1 style={{ color: '#000' }}>Study Tools</h1>
+                <h1 style={{ fontSize: '2rem', color: '#000' }}>Study Tools</h1>
+                <br />
                 <Button variant="contained" onClick={handleClickOpen}>
                     Open Pomodoro Timer
                 </Button>
@@ -72,7 +81,20 @@ const StudyTools = () => {
                         <Button onClick={handleClose}>Close</Button>
                     </DialogActions>
                 </Dialog>
-                {/* <TodoList /> */}
+                <br />
+                <br />
+                <Button variant="contained" onClick={() => setOpenTodoList(true)}>
+                    Open Todo List
+                </Button>
+                <Dialog open={openTodoList} onClose={() => setOpenTodoList(false)}>
+                    <DialogTitle>Todo List</DialogTitle>
+                    <DialogContent>
+                        <TodoList tasks={tasks} newTask={newTask} setTasks={setTasks} setNewTask={setNewTask} />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setOpenTodoList(false)}>Close</Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         </div>
     );
