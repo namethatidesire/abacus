@@ -1,0 +1,111 @@
+.weekly-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    background: white;
+    border: 1px solid #E5E5E5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.weekly-header {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    border-bottom: 1px solid #E5E5E5;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.time-header {
+    width: 60px;
+    border-right: 1px solid #E5E5E5;
+}
+
+.day-header {
+    padding: 12px;
+    text-align: center;
+    border-right: 1px solid #E5E5E5;
+}
+
+.day-header.today {
+    background-color: #f0f4f9;
+}
+
+.day-header.today h6 {
+    color: #8CA7D6;
+    font-weight: 600;
+}
+
+.weekly-content {
+    display: flex;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.time-column {
+    width: 60px;
+    flex-shrink: 0;
+    border-right: 1px solid #E5E5E5;
+    background: white;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.time-slot {
+    height: 60px;
+    padding: 4px 8px;
+    text-align: right;
+    border-bottom: 1px solid #E5E5E5;
+    color: #666;
+}
+
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    flex: 1;
+    position: relative;
+}
+
+.day-column {
+    position: relative;
+    border-right: 1px solid #E5E5E5;
+    min-width: 150px;
+}
+
+.time-grid-line {
+    height: 60px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.week-event {
+    position: absolute;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    color: white;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.week-event:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 3;
+}
+
+.event-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-time {
+    font-size: 0.75em;
+    opacity: 0.9;
+}
