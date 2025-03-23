@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // create event
 export async function POST(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end } = await request.json();
+    const { id, userId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
     const event = await prisma.event.create({
       data: {
         id,
@@ -13,6 +13,8 @@ export async function POST(request) {
         date,
         recurring,
         color,
+        type,
+        tags,
         description,
         start,
         end
@@ -29,7 +31,7 @@ export async function POST(request) {
 // update event
 export async function PUT(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end } = await request.json();
+    const { id, userId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
     const event = await prisma.event.update({
       where: {
         id
@@ -40,6 +42,8 @@ export async function PUT(request) {
         date,
         recurring,
         color,
+        type,
+        tags,
         description,
         start,
         end
@@ -53,19 +57,59 @@ export async function PUT(request) {
   }
 }
 
-// delete event
+export async function GET(request, { params }) {
+	try {
+		const userId = (await params).accountId;
+		const events = await prisma.event.findMany({
+		where: {
+			userId
+		  }
+		});
+
+		return NextResponse.json(events, { status: 200 });
+	} catch (error) {
+		console.error(error.stack);
+		return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+	}
+}
+
+
+// delete event - CORRECTED VERSION
 export async function DELETE(request) {
   try {
-    const { id } = request.query;
-    await prisma.event.delete({
-      where: {
-        id
+    // In App Router, we need to get the URL and extract the ID parameter
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    const id = searchParams.get("id");
+    
+    if (!id) {
+      return NextResponse.json({ message: "Event ID is required" }, { status: 400 });
+    }
+
+    // First, disconnect all tags from the event
+    await prisma.event.update({
+      where: { id },
+      data: {
+        tags: {
+          set: [] // This removes all tag connections
+        }
       }
     });
     
-    return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+    // Then delete the event
+    const deletedEvent = await prisma.event.delete({
+      where: { id }
+    });
+    
+    return NextResponse.json({ 
+      message: "Event deleted successfully", 
+      event: deletedEvent 
+    }, { status: 200 });
   } catch (error) {
     console.error(error.stack);
-    return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    return NextResponse.json({ 
+      message: "Failed to delete event", 
+      error: error.message 
+    }, { status: 500 });
   }
 }

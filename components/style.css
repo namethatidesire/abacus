@@ -1,137 +1,209 @@
+/* Main calendar container */
 .calendar {
-    width: 900px;
-    height: 600px;
-    display: flex;
-    flex-direction: column;
-    margin-top: 2rem;
-    margin-left: auto;
-    margin-right: auto;
-    color: black;
-  }
-  
-  .calendar-header {
-    width: 100%;
-    height: 50px;
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: black;
-  }
-  
-  .title {
-    width: 25%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-  
-  .title h2 {
-    margin: auto;
-  }
-  
-  .tools {
-    width: 25%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-  
-  .tools button {
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    background-color: #ffffff;
-    border: none;
-  }
-  
-  .tools button span:hover {
-    color: #99cccc;
-  }
-  
-  .calendar-body {
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .table-header {
-    height: 100px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-  }
-  
-  .weekday {
-    width: 100px;
-    text-align: center;
-  }
-  
-  .table-content {
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    box-sizing: border-box;
-  }
-  
-  .calendar-day {
-    width: 125px;
-    height: 75px;
-    position: relative;
-    border: 1px solid #a6a6a6;
-  }
-  
-  .calendar-day:hover {
-    background-color: rgba(0,0,0,.20);
-  }
-  
-  .calendar-day p {
-    position: absolute;
-    right: 10px;
-    color: #a6a6a6;
-  }
-  
-  .current p {
-    color: #000000;
-  }
-  
-  .selected p {
-    color: #cc0000;
-    font-weight: bold;
-  }
-  .selected {
-    background-color: rgba(0,0,0,.10);
-  }
-  .event {
-    margin: 2px 0;
-    padding: 2px 5px;
-    font-size: 0.9em;
-    color: #333;
-}
-
-.navbar {
-  background-color: lightblue;
-  padding: 10px;
-}
-
-.navbar ul {
-  list-style-type: none;
+  width: 100%;
+  max-width: 100%; /* Changed from 900px to 100% */
+  min-height: 90vh; /* Changed from 600px to 90vh */
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  margin: 0 auto;
+  color: #333;
+  background-color: #fff;
+  padding-left: 20rem;
+  padding-right: 20rem;
 }
 
-.navbar li {
-  display: inline;
+/* Calendar Header */
+.calendar-header {
+  width: 100%;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
 }
 
-.navbar a {
-  text-decoration: none;
-  color: black;
+/* Title container */
+.title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Title (Month and Year) */
+.title {
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+/* Current date text */
+.current-date {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.current-date:hover {
+  color: #8CA7D6;
+}
+
+/* Navigation buttons */
+.nav-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  padding: 0.5rem;
+}
+
+.nav-button:hover {
+  color: #8CA7D6;
+}
+
+/* Calendar Body */
+.calendar-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: calc(90vh - 120px); /* Subtract header height */
+}
+
+/* Weekday labels */
+.table-header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.weekday {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Calendar grid */
+.table-content {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  border-top: 1px solid #E5E5E5;
+  border-left: 1px solid #E5E5E5;
+  flex-grow: 1;
+  height: 100%; /* Use full height of parent */
+}
+
+/* Calendar day cells */
+.calendar-day {
+  height: auto; /* Changed from fixed 120px */
+  min-height: 15vh; /* Minimum height based on viewport */
+  width: 100%;
+  border-right: 1px solid #E5E5E5;
+  border-bottom: 1px solid #E5E5E5;
+  padding: 0.5rem;
+  position: relative;
+  overflow-y: auto; /* Add scrolling for overflow content */
+}
+
+.calendar-day p {
+  margin: 0;
+  text-align: right;
+  color: #999;
+}
+
+/* Current month days */
+.current p {
+  color: #333;
+}
+
+/* Today's date */
+.today p {
+  color: #CC0000 !important;
   font-weight: bold;
+}
+
+/* Selected date */
+.selected {
+  background-color: #F5F5F5;
+}
+
+/* Weekly view styles */
+.weekly-view {
+  flex-grow: 1;
+  height: 100%; /* Changed from fixed 600px */
+}
+
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+  border-left: 1px solid #E5E5E5;
+}
+
+.weekly-day {
+  height: auto; /* Changed from fixed 600px */
+  min-height: calc(90vh - 150px); /* Relative to viewport height */
+  width: 100%;
+  border-right: 1px solid #E5E5E5;
+  border-bottom: 1px solid #E5E5E5;
+  border-top: 1px solid #E5E5E5;
+  padding: 0.5rem;
+  background-color: white;
+  overflow-y: auto; /* Add scrolling for overflow content */
+}
+
+.day-header {
+  text-align: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.day-header.today h6 {
+  color: #CC0000;
+  font-weight: bold;
+}
+
+.day-events {
+  margin-top: 0.25rem;
+}
+
+.week-event {
+  margin: 0.1rem 0;
+  padding: 0.15rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.event-time {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+  font-size: 0.7rem;
+}
+
+.event-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.highlighted-event {
+  outline: 2px solid #FBE59D !important;
+  font-weight: 600 !important;
+  position: relative;
+  box-shadow: 0 0 8px 2px rgba(251, 229, 157, 0.7) !important;
+  z-index: 10 !important;
+  /* Use transform-origin to grow from center */
+  transform-origin: center center;
+  /* Use a subtle scale that won't break layouts */
+  transform: scale(1.03);
+  /* Add transition for smooth effect */
+  transition: all 0.2s ease-in-out;
 }

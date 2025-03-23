@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import styles from './signup.module.css';
@@ -7,22 +7,40 @@ const SignupPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [timezone, setTimezone] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (event) => {
+  interface SignupFormData {
+    username: string;
+    email: string;
+    password: string;
+    timezone: string;
+  }
+
+  interface ErrorResponse {
+    message: string;
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setTimezone(userTimezone);
       const response = await fetch(`http://localhost:3000/api/account/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ "username": username, "email": email, "password": password }),
+        body: JSON.stringify({ 
+          username, 
+          email, 
+          password, 
+          timezone 
+        } as SignupFormData),
       });
 
       if (response.status === 201) {
-        // Navigate to the login page after successful signup
-        window.location.href = '/login'; // Use window.location to navigate
+        window.location.href = '/login';
       } else {
-        const errorData = await response.json();
+        const errorData: ErrorResponse = await response.json();
         console.error('Error:', errorData);
         setMessage(errorData.message);
       }
