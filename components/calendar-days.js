@@ -172,12 +172,11 @@ function CalendarDays(props) {
                                         onMouseMove={(e) => {
                                             const tooltip = e.currentTarget.querySelector('.conflict-tooltip');
                                             if (tooltip) {
-                                                const padding = 10;
+                                                const padding = -50;
                                                 tooltip.style.left = `${e.clientX + padding}px`;
-                                                tooltip.style.top = `${e.clientY - tooltip.offsetHeight - padding}px`;
+                                                tooltip.style.top = `${e.clientY - tooltip.offsetHeight - 10}px`;
                                             }
                                         }}
-                                        title={conflictTooltip} // Native HTML tooltip
                                     >
                                         {event.title}
                                         {hasConflict && <span style={{ marginLeft: '4px' }}>⚠️</span>}
