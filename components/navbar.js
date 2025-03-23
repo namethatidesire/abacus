@@ -110,34 +110,37 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Chatbot Popup Container */}
-            {isChatOpen && (
-                <div 
-                    ref={chatbotRef}
-                    className="fixed bottom-20 right-6 z-50 shadow-2xl transition-all duration-300 transform"
-                    style={{ 
-                        opacity: isChatOpen ? 1 : 0,
-                        transform: isChatOpen ? 'translateY(0)' : 'translateY(20px)'
-                    }}
-                >
-                    {/* Wrapper div to position the close button inside the ChatBot component */}
-                    <div className="relative">
-                        {/* Close button positioned inside */}
-                        <button 
-                            onClick={() => setIsChatOpen(false)}
-                            className="absolute top-3 right-3 z-10 text-white hover:text-[#FBE59D] focus:outline-none"
-                            aria-label="Close chat"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        {/* Your existing ChatBot component */}
+            {/* Chatbot Popup Container - Full height, 1/4 width on right side */}
+            <div 
+                ref={chatbotRef}
+                className="fixed top-0 right-0 z-50 shadow-2xl transition-all duration-300 transform h-screen"
+                style={{ 
+                    width: '25%',
+                    opacity: isChatOpen ? 1 : 0,
+                    visibility: isChatOpen ? 'visible' : 'hidden',
+                    transform: isChatOpen ? 'translateX(0)' : 'translateX(100%)',
+                    pointerEvents: isChatOpen ? 'auto' : 'none'
+                }}
+            >
+                {/* Wrapper div to fill the container height */}
+                <div className="relative h-full">
+                    {/* Close button positioned inside */}
+                    <button 
+                        onClick={() => setIsChatOpen(false)}
+                        className="absolute top-3 right-3 z-10 text-white hover:text-[#FBE59D] focus:outline-none"
+                        aria-label="Close chat"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+                    
+                    {/* ChatBot component that fills the container */}
+                    <div className="h-full">
                         <ChatBot />
                     </div>
                 </div>
-            )}
+            </div>
         </>
     );
 };

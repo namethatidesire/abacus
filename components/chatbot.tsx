@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+
 // Add keyframes for the animation
 const pulse = `
   @keyframes pulse {
@@ -33,44 +34,291 @@ const typingDotStyle = {
 
 const ChatBot = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hi there! How can I help you today?", sender: "bot" }
+    { id: 1, text: "Hi there! I'm your schedule assistant. Ask me about your schedule or for help managing your time.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [events, setEvents] = useState({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Bot responses based on user input
+  // Interface definitions
   interface Message {
     text: string;
     sender: "user" | "bot";
     id: number;
   }
 
-  interface BotResponse {
-    responseText: string;
-  }
+  // Initialize with user authentication and fetch events
+  useEffect(() => {
+    const initializeAssistant = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          setError('Authentication token not found. Please log in first.');
+          return null;
+        }
+        
+        // For JWT tokens
+        let id;
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          id = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+          
+          if (!id) {
+            throw new Error('User ID not found in token');
+          }
+        } catch (tokenError) {
+          console.error('Error parsing token:', tokenError);
+          setError('Invalid authentication token format. Please log in again.');
+          return null;
+        }
+        
+        setUserId(id);
+        
+        // Verify token with the server (similar to Calendar.js)
+        try {
+          const authResponse = await fetch(`/api/account/authorize`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
 
-  const getBotResponse = (userMessage: string): string => {
-    const userMessageLower: string = userMessage.toLowerCase();
-    
-    if (userMessageLower.includes("hello") || userMessageLower.includes("hi")) {
-      return "Hello! Nice to meet you!";
-    } else if (userMessageLower.includes("help")) {
-      return "I can help with general questions, provide information, or just chat. What would you like to know?";
-    } else if (userMessageLower.includes("bye") || userMessageLower.includes("goodbye")) {
-      return "Goodbye! Have a great day!";
-    } else if (userMessageLower.includes("thank")) {
-      return "You're welcome! Is there anything else you'd like to talk about?";
-    } else {
-      return "That's interesting. Tell me more or ask a different question.";
+          if (!authResponse.ok) {
+            throw new Error(`Token validation failed: ${authResponse.status}`);
+          }
+
+          const authData = await authResponse.json();
+          if (authData.status !== 200) {
+            throw new Error('Invalid token. Please log in again.');
+          }
+          
+          // Once authenticated, fetch the user's events with the validated user ID
+          const userIdFromAuth = authData.decoded.userId;
+          if (userIdFromAuth) {
+            setUserId(userIdFromAuth); // Update with server-validated ID
+            const eventsData = await fetchUserEvents(userIdFromAuth);
+            if (eventsData) {
+              setEvents(eventsData);
+            }
+          }
+          
+          setIsInitialized(true);
+          return userIdFromAuth || id;
+        } catch (serverError) {
+          console.error('Server authentication error:', serverError);
+          setError('Server authentication failed. Please log in again.');
+          return null;
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        setError(error instanceof Error ? error.message : 'Authentication failed. Please log in again.');
+        return null;
+      }
+    };
+
+    initializeAssistant();
+  }, []);
+
+  // Fetch user events
+  const fetchUserEvents = async (userIdToUse = null) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const effectiveUserId = userIdToUse || userId;
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      if (!effectiveUserId) {
+        throw new Error('User ID not available');
+      }
+
+      const response = await fetch(`/api/event/${effectiveUserId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+      }
+
+      const events = await response.json();
+      
+      // Process events similar to Calendar.js
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; }) => {
+        const eventDate = new Date(event.date);
+        const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
+        const dateKey = localDate.toDateString();
+        
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        
+        acc[dateKey].push({
+          ...event,
+          date: localDate.toISOString().split('T')[0],
+          time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+        });
+        
+        return acc;
+      }, {});
+      
+      return processedEvents;
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      // Don't set an error state here, just return null
+      return null;
     }
   };
 
+  // Query Claude API
+  const queryClaudeAPI = async (userMessage: string) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      if (!userId) {
+        throw new Error('User ID not available');
+      }
+
+      // Use cached events or fetch fresh ones
+      let userEvents = events;
+      if (Object.keys(userEvents).length === 0) {
+        userEvents = await fetchUserEvents();
+      }
+      
+      const eventSummary = formatEventSummary(userEvents);
+      
+      const response = await fetch('http://localhost:3000/api/chatbot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          prompt: `
+            The user is asking about their schedule.
+            Here is their current schedule information:
+            
+            ${eventSummary}
+            
+            User question: "${userMessage}"
+            
+            Based on this schedule information, please provide insights or answer their question.
+            Keep responses conversational and focused on schedule management.
+            
+            Be concise and provide relevant information. Avoid repeating the user's question.
+            If they ask about specific dates or times, refer to the schedule information provided.
+            If they ask about creating or modifying events, suggest they use the calendar interface.
+            If they ask for schedule analysis, provide insights based on their event distribution.
+            
+            Format dates and times in a new paragraph line by line for clarity.
+            
+            If their question is unclear or not about their schedule, ask clarifying questions.
+          `,
+          model: "claude-3-5-sonnet-20241022" // Use appropriate model
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.completion || "I'm having trouble accessing your schedule information right now. Could you try again or provide more details?";
+    } catch (err) {
+      console.error('Error querying Claude API:', err);
+      if (err instanceof Error && err.message.includes('Authentication')) {
+        setError(err.message);
+      }
+      return "I'm experiencing some technical difficulties. Please try again in a moment.";
+    }
+  };
+  
+  // Format events for the Claude prompt
+  const formatEventSummary = (events: { [x: string]: any; } | null) => {
+    if (!events || Object.keys(events).length === 0) {
+      return "No events found in your schedule.";
+    }
+    
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    
+    let summary = "SCHEDULE SUMMARY:\n";
+    
+    // Sort dates
+    const sortedDates = Object.keys(events).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    
+    // Only include upcoming events (today and future)
+    const upcomingDates = sortedDates.filter(dateStr => new Date(dateStr) >= today);
+    
+    if (upcomingDates.length === 0) {
+      return "You have no upcoming events in your schedule.";
+    }
+    
+    // Limit to next 10 days or 20 events max
+    let eventCount = 0;
+    const maxEvents = 20;
+    
+    upcomingDates.forEach(dateStr => {
+      if (eventCount >= maxEvents) return;
+      
+      const date = new Date(dateStr);
+      if (date > nextWeek && eventCount > 5) return; // Only show more distant events if we have few upcoming
+      
+      const dateEvents = events[dateStr];
+      if (dateEvents && dateEvents.length > 0) {
+        // Format date nicely
+        const formattedDate = date.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        
+        summary += `\n${formattedDate}:\n`;
+        
+        // Sort events by time
+        const sortedEvents = [...dateEvents].sort((a, b) => {
+          return a.time.localeCompare(b.time);
+        });
+        
+        sortedEvents.forEach(event => {
+          if (eventCount >= maxEvents) return;
+          summary += `- ${event.time}: ${event.title} (${event.location || 'No location'})`;
+          if (event.description) {
+            summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
+          }
+          summary += '\n';
+          eventCount++;
+        });
+      }
+    });
+    
+    return summary;
+  };
+
   // Handle user message submission
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     
     if (inputValue.trim() === "") return;
+    
+    // Check authentication before proceeding
+    if (!userId || !isInitialized) {
+      setError('Not authenticated. Please refresh the page or log in again.');
+      return;
+    }
     
     // Add user message
     const userMessage = { 
@@ -85,17 +333,30 @@ const ChatBot = () => {
     // Simulate bot typing
     setIsTyping(true);
     
-    // Simulate response delay
-    setTimeout(() => {
+    try {
+      // Get response from Claude API
+      const claudeResponse = await queryClaudeAPI(inputValue);
+      
       const botMessage = { 
         id: messages.length + 2, 
-        text: getBotResponse(inputValue), 
+        text: claudeResponse, 
         sender: "bot" 
       };
       
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error getting response:', error);
+      
+      const errorMessage = { 
+        id: messages.length + 2, 
+        text: "Sorry, I encountered an error. Please try again later.", 
+        sender: "bot" 
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   // Auto-scroll to the most recent message
@@ -104,13 +365,23 @@ const ChatBot = () => {
   }, [messages]);
 
   return (
-    <div className="flex flex-col w-full max-w-md mx-auto rounded-lg shadow-lg bg-white overflow-hidden h-96">
+    <div className="flex flex-col w-full h-full bg-white overflow-hidden">
       <GlobalStyles />
       {/* Header */}
       <div className="bg-[#8CA7D6] text-white p-4 flex items-center">
         <div className="h-3 w-3 bg-[#FBE59D] rounded-full mr-2"></div>
-        <h2 className="font-medium">Study Assistant</h2>
+        <h2 className="font-medium">Schedule Assistant</h2>
+        {userId && (
+          <span className="ml-auto text-xs bg-green-500 px-2 py-1 rounded-full">Connected</span>
+        )}
       </div>
+      
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-sm">
+          {error}
+        </div>
+      )}
       
       {/* Messages Container */}
       <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
@@ -150,20 +421,24 @@ const ChatBot = () => {
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Type your message..."
+          placeholder={userId ? "Ask about your schedule..." : "Please log in first..."}
           className="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-[#8CA7D6] text-black"
+          disabled={!userId || !isInitialized}
         />
         <button 
           type="submit" 
-          className="bg-[#8CA7D6] text-white p-2 rounded-r-lg hover:bg-[#7b93bd] focus:outline-none focus:ring-2 focus:ring-[#8CA7D6]"
+          className={`p-2 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#8CA7D6] ${
+            userId && isInitialized 
+              ? "bg-[#8CA7D6] text-white hover:bg-[#7b93bd]" 
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+          disabled={isTyping || !userId || !isInitialized}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
           </svg>
         </button>
       </form>
-      
-
     </div>
   );
 };
