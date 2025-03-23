@@ -28,7 +28,8 @@ export default class Calendar extends Component {
             currentDay: new Date(),
             events: {},
             accountId: null,
-            view: 'month' // 'month' or 'week'
+            view: 'month', // 'month' or 'week'
+            highlightedEventId: null
         }
     }
 
@@ -39,6 +40,9 @@ export default class Calendar extends Component {
             // Redirect to login page Session expired
             window.location.href = '/login';
         }
+
+        // Add event listener for highlighting events from chat
+        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
 
         try {
             const response = await fetch(`api/account/authorize`, {
@@ -63,6 +67,62 @@ export default class Calendar extends Component {
             // Redirect to login page Session expired  
             window.location.href = '/login';
         }
+    }
+
+    componentWillUnmount() {
+        // Remove event listeners when component unmounts
+        document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.removeEventListener('calendarRefresh', this.handleCalendarRefresh);
+    }
+    handleCalendarRefresh = (event) => {
+        console.log('Calendar refresh event received:', event.detail);
+        // Call your fetchEvents method to reload calendar data
+        this.fetchEvents();
+    };
+
+    componentDidMount = async() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            alert('Missing token. Please log in again.');
+            // Redirect to login page Session expired
+            window.location.href = '/login';
+        }
+
+        // Add event listeners
+        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.addEventListener('calendarRefresh', this.handleCalendarRefresh);
+
+        try {
+            const response = await fetch(`api/account/authorize`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.status === 200) {
+                const { userId } = data.decoded;
+                this.setState({ accountId: userId }, this.fetchEvents);
+            } else {
+                alert('Invalid token. Please log in again.');
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            alert('Error verifying token. Please log in again.');
+            window.location.href = '/login';
+        }
+    }
+
+    // Handle highlight event from chat
+    handleHighlightEvent = (e) => {
+        const { eventId, highlight } = e.detail;
+        
+        // Set highlighted event ID in state
+        this.setState({ 
+            highlightedEventId: highlight ? eventId : null 
+        });
     }
 
     fetchEvents = async () => {
@@ -156,7 +216,7 @@ export default class Calendar extends Component {
         const { view, currentDay, events } = this.state;
         
         return (
-            <div>
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Navbar />
 
                 <div className="calendar">
@@ -219,10 +279,11 @@ export default class Calendar extends Component {
                                     ))}
                                 </div>
                                 <CalendarDays 
-                                    day={currentDay} 
-                                    changeCurrentDay={this.changeCurrentDay} 
-                                    createEvent={this.createEvent} 
-                                    events={events} 
+                                day={currentDay} 
+                                changeCurrentDay={this.changeCurrentDay} 
+                                createEvent={this.createEvent} 
+                                events={events}
+                                highlightedEventId={this.state.highlightedEventId} 
                                 />
                             </>
                         ) : (
