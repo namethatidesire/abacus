@@ -222,7 +222,9 @@ export default class Calendar extends Component {
                                     day={currentDay} 
                                     changeCurrentDay={this.changeCurrentDay} 
                                     createEvent={this.createEvent} 
-                                    events={events} 
+                                    events={events}
+                                    updateCallback={this.updateEvents}
+                                    accountId={this.state.accountId}
                                 />
                             </>
                         ) : (

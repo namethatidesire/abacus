@@ -11,8 +11,9 @@ import {
     Typography,
 } from "@mui/material";
 import dayjs from "dayjs";
+import UpdateEventDialog from "@/components/update-event-dialog";
 
-export default function ShowEventDialog({event, children}) {
+export default function ShowEventDialog({event, accountId, updateCallback, children}) {
     const [open, setOpen] = React.useState(false);
     const handleClickOpen = () => {
         setOpen(true);
@@ -27,12 +28,15 @@ export default function ShowEventDialog({event, children}) {
             {children}
         </div>
         <Dialog open={open} onClose={handleClose}>
-            <DialogTitle>{event.title}</DialogTitle>
+            <DialogTitle>
+                {event.title}
+                <UpdateEventDialog accountId={accountId} event={event} callback={updateCallback} />
+            </DialogTitle>
             <DialogContent>
-                <Typography>{dayjs(event.date).format('dddd, MMM. D, YYYY') + " " + event.time}</Typography>
-                {event.endDate !== null ? <Typography>{"to " + dayjs(event.endDate).format('dddd, MMM. D, YYYY h:mm') }</Typography> : ""}
-                {event.recurring !== "None" ? <Typography>Repeats {event.recurring.toLowerCase()}</Typography> : ""}
-                {/*event.reminder !== "None" ? <Typography>Reminder {event.reminder} before</Typography> : ""*/}
+                <Typography>{dayjs(event.date + event.time).format('dddd, MMM. D, YYYY h:mm A')}</Typography>
+                {event.endDate !== null ? <Typography>{"to " + dayjs(event.endDate).format('dddd, MMM. D, YYYY h:mm A') }</Typography> : ""}
+                {/*event.recurring !== "None" ? <Typography>Repeats {event.recurring.toLowerCase()}</Typography> : ""*/}
+                {event.reminder !== "None" ? <Typography>Reminder {event.reminder} before</Typography> : ""}
                 {event.description ? <Typography>Description: {event.description}</Typography> : ""}
             </DialogContent>
         </Dialog>

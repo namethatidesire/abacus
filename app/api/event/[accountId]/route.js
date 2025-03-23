@@ -39,7 +39,7 @@ export async function POST(request) {
 // update event
 export async function PUT(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
+    const { id, userId, title, date, recurring, color, description, start, end, type, tags, reminder } = await request.json();
     const event = await prisma.event.update({
       where: {
         id
@@ -51,10 +51,19 @@ export async function PUT(request) {
         recurring,
         color,
         type,
-        tags,
+        tags: {
+          connectOrCreate: tags.map(tag => ({
+            where: { name: tag.name || tag },
+            create: {
+              name: tag.name || tag,
+              color: tag.color || '#FF0000'
+            }
+          }))
+        },
         description,
         start,
-        end
+        end,
+        reminder
       }
     });
     
@@ -69,9 +78,12 @@ export async function GET(request, { params }) {
 	try {
 		const userId = (await params).accountId;
 		const events = await prisma.event.findMany({
-		where: {
-			userId
-		  }
+          where: {
+              userId
+          },
+          include: {
+              tags: true
+          }
 		});
 
 		return NextResponse.json(events, { status: 200 });
