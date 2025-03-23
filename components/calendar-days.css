@@ -32,3 +32,12 @@
     font-size: 1em; /* Increase font size for the calendar days */
     font-weight: bold; /* Bold the date text */
 }
+
+.conflict-event {
+    border: 2px solid #ff0000 !important;
+    font-weight: 600 !important;
+}
+
+.conflict-event:hover {
+    box-shadow: 0 0 6px 3px rgba(255, 0, 0, 0.3) !important;
+}

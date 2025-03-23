@@ -12,6 +12,17 @@ const crimsonPro = Crimson_Pro({
     weight: ['400', '500', '600'],
 });
 
+// Add this function before the CalendarDays component
+const checkEventOverlap = (event1, event2) => {
+    const start1 = new Date(`${event1.date}T${event1.time}`);
+    const end1 = event1.endDate ? new Date(event1.endDate) : new Date(start1.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+    
+    const start2 = new Date(`${event2.date}T${event2.time}`);
+    const end2 = event2.endDate ? new Date(event2.endDate) : new Date(start2.getTime() + 60 * 60 * 1000);
+
+    return start1 < end2 && end1 > start2;
+};
+
 function CalendarDays(props) {
     const firstDayOfMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 1);
     const weekdayOfFirstDay = firstDayOfMonth.getDay();
@@ -117,6 +128,12 @@ function CalendarDays(props) {
                         {visibleEvents.map((event, eventIndex) => {
                             const isHighlighted = props.highlightedEventId === event.id;
                             
+                            // Check if this event overlaps with any other events on the same day
+                            const hasConflict = dayEvents.some((otherEvent) => {
+                                if (otherEvent.id === event.id) return false;
+                                return checkEventOverlap(event, otherEvent);
+                            });
+                            
                             return (
                                 <ShowEventDialog
                                     key={eventIndex}
@@ -125,24 +142,27 @@ function CalendarDays(props) {
                                     updateCallback={props.updateCallback}
                                 >
                                     <div 
-                                        className={`event${isHighlighted ? " highlighted-event" : ""}`}
+                                        className={`event${isHighlighted ? " highlighted-event" : ""}${hasConflict ? " conflict-event" : ""}`}
                                         style={{ 
                                             backgroundColor: event.color,
-                                            boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 'none',
+                                            boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 
+                                                      hasConflict ? '0 0 4px 2px #ff000066' : 'none',
                                             transform: isHighlighted ? 'scale(1.05)' : 'none',
                                             zIndex: isHighlighted ? 10 : 'auto',
                                             transition: 'none',
                                             color: 'white',
-                                            fontWeight: 400,
+                                            fontWeight: hasConflict ? 600 : 400,
                                             padding: '4px 8px',
                                             borderRadius: '8px',
                                             marginBottom: '4px',
                                             textAlign: 'center',
                                             fontSize: '0.8em',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            border: hasConflict ? '2px solid #ff0000' : 'none'
                                         }}
                                     >
                                         {event.title}
+                                        {hasConflict && <span style={{ marginLeft: '4px' }}>⚠️</span>}
                                     </div>
                                 </ShowEventDialog>
                             );
