@@ -3,12 +3,12 @@ import React, { Component } from 'react';
 import { Crimson_Pro } from 'next/font/google';
 import CalendarDays from './calendar-days.js';
 import WeeklyView from './weekly-view.js';
-import Navbar from './navbar.js';
 import { Typography } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
 import SearchFilterEventsDialog from "./searchFilterEvents";
+import PropTypes from 'prop-types';
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -17,6 +17,10 @@ const crimsonPro = Crimson_Pro({
 });
 
 export default class Calendar extends Component {
+    static propTypes = {
+        default: PropTypes.string.isRequired
+    };
+
     constructor(props) {
         super(props);
 
@@ -25,6 +29,7 @@ export default class Calendar extends Component {
             'July', 'August', 'September', 'October', 'November', 'December'];
 
         this.state = {
+            calendarId: null, // Initialize as null
             currentDay: new Date(),
             events: {},
             accountId: null,
@@ -39,53 +44,7 @@ export default class Calendar extends Component {
             alert('Missing token. Please log in again.');
             // Redirect to login page Session expired
             window.location.href = '/login';
-        }
-
-        // Add event listener for highlighting events from chat
-        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
-
-        try {
-            const response = await fetch(`api/account/authorize`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-            if (data.status === 200) {
-                const { userId } = data.decoded;
-                this.setState({ accountId: userId }, this.fetchEvents);
-            } else {
-                alert('Invalid token. Please log in again.');
-                // Redirect to login page Session expired  
-                window.location.href = '/login';
-            }
-        } catch (error) {
-            alert('Error verifying token. Please log in again.');
-            // Redirect to login page Session expired  
-            window.location.href = '/login';
-        }
-    }
-
-    componentWillUnmount() {
-        // Remove event listeners when component unmounts
-        document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
-        document.removeEventListener('calendarRefresh', this.handleCalendarRefresh);
-    }
-    handleCalendarRefresh = (event) => {
-        console.log('Calendar refresh event received:', event.detail);
-        // Call your fetchEvents method to reload calendar data
-        this.fetchEvents();
-    };
-
-    componentDidMount = async() => {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-            alert('Missing token. Please log in again.');
-            // Redirect to login page Session expired
-            window.location.href = '/login';
+            return;
         }
 
         // Add event listeners
@@ -104,16 +63,44 @@ export default class Calendar extends Component {
             const data = await response.json();
             if (data.status === 200) {
                 const { userId } = data.decoded;
-                this.setState({ accountId: userId }, this.fetchEvents);
+                // Set both accountId and calendarId, then fetch events
+                this.setState({ 
+                    accountId: userId,
+                    calendarId: this.props.default // Get calendarId from props
+                }, this.fetchEvents);
             } else {
                 alert('Invalid token. Please log in again.');
+                // Redirect to login page Session expired  
                 window.location.href = '/login';
             }
         } catch (error) {
             alert('Error verifying token. Please log in again.');
+            // Redirect to login page Session expired  
             window.location.href = '/login';
         }
     }
+
+    componentDidUpdate(prevProps, prevState) {
+        // If calendarId is null and we have a default prop, set it
+        if (!this.state.calendarId && this.props.default) {
+            this.setState({ calendarId: this.props.default }, this.fetchEvents);
+        }
+        // If the default prop changes, update calendarId
+        else if (prevProps.default !== this.props.default) {
+            this.setState({ calendarId: this.props.default }, this.fetchEvents);
+        }
+    }
+
+    componentWillUnmount() {
+        // Remove event listeners when component unmounts
+        document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.removeEventListener('calendarRefresh', this.handleCalendarRefresh);
+    }
+    handleCalendarRefresh = (event) => {
+        console.log('Calendar refresh event received:', event.detail);
+        // Call your fetchEvents method to reload calendar data
+        this.fetchEvents();
+    };
 
     // Handle highlight event from chat
     handleHighlightEvent = (e) => {
@@ -127,16 +114,23 @@ export default class Calendar extends Component {
 
     fetchEvents = async () => {
         const { accountId } = this.state;
-        if (!accountId) return;
-
+        const calendarId = this.state.calendarId || this.props.default;
+        
+        if (!accountId || !calendarId) {
+            console.log('Missing required IDs:', { accountId, calendarId });
+            return;
+        }
+    
         try {
-            const response = await fetch(`api/event/${accountId}`, {
-                method: 'GET'
+            const getEvents = await fetch(`http://localhost:3000/api/calendar/events`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: accountId, calendarId })
             });
-            if (response.ok) {
-                const data = await response.json();
+            if (getEvents.ok) {
+                const data = (await getEvents.json()).events || [];
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const events = data.reduce((acc, event) => {
+                const events = Array.isArray(data) ? data.reduce((acc, event) => {
                     const eventDate = new Date(event.date);
                     const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
                     const dateKey = localDate.toDateString();
@@ -149,10 +143,10 @@ export default class Calendar extends Component {
                         time: localDate.toTimeString().split(' ')[0].substring(0, 5)
                     });
                     return acc;
-                }, {});
+                }, {}) : {};
                 this.setState({ events });
             } else {
-                console.error('Failed to fetch events:', response.statusText);
+                console.error('Failed to fetch events:', getEvents.statusText);
             }
         } catch (error) {
             console.error('Error fetching events:', error);
@@ -217,8 +211,6 @@ export default class Calendar extends Component {
         
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Navbar />
-
                 <div className="calendar">
                     {/* Calendar Header */}
                     <div className="calendar-header">
@@ -255,7 +247,7 @@ export default class Calendar extends Component {
                             <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
-                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
+                        <CreateEventDialog accountId={this.state.accountId} calendarId={this.state.calendarId} callback={this.updateEvents}/>
                         <SearchFilterEventsDialog accountId={this.state.accountId}/>
                     </div>
 

@@ -57,11 +57,17 @@ const Dashboard = () => {
         });
         const currentUserData = await getCurrentUser.json();
         const eventsResponse = await fetch(`http://localhost:3000/api/event/${userId}`);
-        const eventData = await eventsResponse.json();
+        const eventData = (await eventsResponse.json()).events;
         console.log(eventData);
         setUsername(currentUserData.account.username);
         if (eventData) {
-          setEvents(eventData);
+          // Filter events to only include today's events
+          const todayEvents = eventData.filter(event => {
+            const eventDate = new Date(event.date).toDateString();
+            const today = new Date().toDateString();
+            return eventDate === today;
+          });
+          setEvents(todayEvents);
         }
         setLoading(false); // Set loading to false after data is fetched
       } catch (error) {

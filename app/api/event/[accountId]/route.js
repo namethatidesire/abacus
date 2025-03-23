@@ -4,11 +4,11 @@ import { NextResponse } from "next/server";
 // create event
 export async function POST(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
+    const { userId, calendarId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
     const event = await prisma.event.create({
       data: {
-        id,
         userId,
+        calendarId,
         title,
         date,
         recurring,
@@ -21,7 +21,7 @@ export async function POST(request) {
       }
     });
     
-    return NextResponse.json(event, { status: 201 });
+    return NextResponse.json({ event }, { status: 201 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });
@@ -50,7 +50,7 @@ export async function PUT(request) {
       }
     });
     
-    return NextResponse.json(event, { status: 200 });
+    return NextResponse.json({ event }, { status: 200 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });
@@ -66,7 +66,7 @@ export async function GET(request, { params }) {
 		  }
 		});
 
-		return NextResponse.json(events, { status: 200 });
+		return NextResponse.json({ events }, { status: 200 });
 	} catch (error) {
 		console.error(error.stack);
 		return NextResponse.json({ message: "An error occurred" }, { status: 500 });

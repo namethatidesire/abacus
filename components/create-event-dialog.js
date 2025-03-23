@@ -24,6 +24,7 @@ export default function CreateEventDialog(props) {
     const [eventDateTime, setEventDateTime] = React.useState(dayjs());
 
     const accountId = props.accountId;
+    const calendarId = props.calendarId;
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -44,6 +45,7 @@ export default function CreateEventDialog(props) {
         // const eventTime = prompt("Enter event time (HH:MM):");
         const newEvent = {
             userId: accountId,
+            calendarId: calendarId,
             title: eventTitle,
             date: eventDateTime.toISOString(),
             time: eventDateTime.format('HH:mm'),
@@ -52,7 +54,7 @@ export default function CreateEventDialog(props) {
             description: null,
             start: null,
             end: null, 
-            type: "EVENT"
+            type: "EVENT",
         };
 
         try {

@@ -217,40 +217,31 @@ const ChatBot = () => {
         throw new Error('User ID not available');
       }
 
-      const response = await fetch(`/api/event/${effectiveUserId}`, {
+      const getEvents = await fetch(`/api/event/${effectiveUserId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+    if (getEvents.ok) {
+        const data = (await getEvents.json()).events || [];
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const processedEvents = Array.isArray(data) ? data.reduce((acc, event) => {
+            const eventDate = new Date(event.date);
+            const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
+            const dateKey = localDate.toDateString();
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push({
+                ...event,
+                date: localDate.toISOString().split('T')[0],
+                time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+            });
+            return acc;
+        }, {}) : {};
+        return processedEvents;
       }
-
-      const events = await response.json();
-      
-      // Process events similar to Calendar.js
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; }) => {
-        const eventDate = new Date(event.date);
-        const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
-        const dateKey = localDate.toDateString();
-        
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        
-        acc[dateKey].push({
-          ...event,
-          date: localDate.toISOString().split('T')[0],
-          time: localDate.toTimeString().split(' ')[0].substring(0, 5)
-        });
-        
-        return acc;
-      }, {});
-      
-      return processedEvents;
     } catch (error) {
       console.error('Error fetching events:', error);
       // Don't set an error state here, just return null

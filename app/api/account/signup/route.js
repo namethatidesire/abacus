@@ -29,6 +29,7 @@ export async function POST(request) {
         password: hashPassword(password),
       },
       select: {
+        id: true,
         username: true,
         email: true,
       },
@@ -40,7 +41,14 @@ export async function POST(request) {
         name: "My Calendar",
         description: "The default calendar.",
         main: true,
-        events: [],
+        shared: false,
+        users: {
+          connect: [
+            {
+              id: newUser.id,
+            },
+          ],
+        },
       },
     });
 

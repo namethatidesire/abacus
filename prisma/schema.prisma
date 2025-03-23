@@ -38,6 +38,7 @@ model Tag {
 model Event {
   id String @id @default(uuid())
   userId String
+  calendarId String
   title String
   date DateTime @default(now())
   recurring Boolean
@@ -51,7 +52,7 @@ model Event {
   end DateTime?
 
   user User @relation(fields: [userId], references: [id])
-  calendar Calendar[]
+  calendar Calendar @relation(fields: [calendarId], references: [id])
 }
 
 model Calendar {
@@ -59,7 +60,6 @@ model Calendar {
   ownerId String
   name String @default("CalendarName")
   description String @default("No description.")
-  color String
   main Boolean @default(false)
   shared Boolean @default(false)
 

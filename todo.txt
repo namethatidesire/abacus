@@ -20,3 +20,7 @@ share an existing event
 - option appears upon clicking an existing event
 - the event is shared by creating a new event for the importing-user with all of the same details as the event being shared
 	- the user can see the details of the event before importing it (incl. username of person who shared)
+
+
+todo:
+- fix tag search to isolate calendars
