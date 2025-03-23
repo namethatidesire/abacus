@@ -128,11 +128,19 @@ function CalendarDays(props) {
                         {visibleEvents.map((event, eventIndex) => {
                             const isHighlighted = props.highlightedEventId === event.id;
                             
-                            // Check if this event overlaps with any other events on the same day
-                            const hasConflict = dayEvents.some((otherEvent) => {
+                            // Find all conflicting events
+                            const conflictingEvents = dayEvents.filter((otherEvent) => {
                                 if (otherEvent.id === event.id) return false;
                                 return checkEventOverlap(event, otherEvent);
                             });
+                            
+                            const hasConflict = conflictingEvents.length > 0;
+                            
+                            // Create tooltip content for conflicts
+                            const conflictTooltip = hasConflict 
+                                ? `Conflicts with:\n${conflictingEvents.map(e => 
+                                    `${e.title} (${e.time})`).join('\n')}`
+                                : '';
                             
                             return (
                                 <ShowEventDialog
@@ -158,11 +166,33 @@ function CalendarDays(props) {
                                             textAlign: 'center',
                                             fontSize: '0.8em',
                                             cursor: 'pointer',
-                                            border: hasConflict ? '2px solid #ff0000' : 'none'
+                                            border: hasConflict ? '2px solid #ff0000' : 'none',
+                                            position: 'relative' // Add this for tooltip positioning
                                         }}
+                                        onMouseMove={(e) => {
+                                            const tooltip = e.currentTarget.querySelector('.conflict-tooltip');
+                                            if (tooltip) {
+                                                const padding = 10;
+                                                tooltip.style.left = `${e.clientX + padding}px`;
+                                                tooltip.style.top = `${e.clientY - tooltip.offsetHeight - padding}px`;
+                                            }
+                                        }}
+                                        title={conflictTooltip} // Native HTML tooltip
                                     >
                                         {event.title}
                                         {hasConflict && <span style={{ marginLeft: '4px' }}>⚠️</span>}
+                                        
+                                        {/* Custom tooltip */}
+                                        {hasConflict && (
+                                            <div className="conflict-tooltip">
+                                                <strong>Conflicts with:</strong>
+                                                {conflictingEvents.map((e, i) => (
+                                                    <div key={i}>
+                                                        • {e.title} ({e.time})
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </ShowEventDialog>
                             );
