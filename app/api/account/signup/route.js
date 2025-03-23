@@ -38,7 +38,7 @@ export async function POST(request) {
     const newCalendar = await prisma.calendar.create({
       data: {
         ownerId: newUser.id,
-        name: "Default",
+        name: "Personal",
         description: "The default calendar.",
         main: true,
         shared: false,

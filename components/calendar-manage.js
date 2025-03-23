@@ -25,6 +25,7 @@ export default function ManageCalendarDialog(props) {
     const [editMode, setEditMode] = useState(false);
     const [selectedCalendar, setSelectedCalendar] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [shareEmail, setShareEmail] = useState('');
 
     const accountId = props.accountId;
     const currentCalendarId = props.calendarId;
@@ -36,13 +37,13 @@ export default function ManageCalendarDialog(props) {
     const handleClose = () => {
         setOpen(false);
     };
-
+	
 	const allCalendars = async() => {
         try {
             const getAllCalendars = await fetch(`http://localhost:3000/api/calendar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: accountId, query: "all" })
+                body: JSON.stringify({ accountId, query: "all" })
             });
             const data = await getAllCalendars.json();
             return data.calendars || [];
@@ -126,11 +127,12 @@ export default function ManageCalendarDialog(props) {
 
     const handleUpdateCalendar = async (calendarId) => {
         try {
+            // Update calendar details
             const response = await fetch('http://localhost:3000/api/calendar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    accountId: accountId,
+                    accountId,
                     query: "update",
                     calendarId: calendarId,
                     name: selectedCalendar.name,
@@ -138,10 +140,17 @@ export default function ManageCalendarDialog(props) {
                 })
             });
             const result = await response.json();
-			setEditMode(false);
-			const updatedCalendars = await allCalendars();
-			setCalendars(updatedCalendars);
-			setSelectedCalendar(null);
+
+            // If there's a share email, handle sharing
+            if (shareEmail) {
+                await handleShareCalendar(calendarId, shareEmail);
+                setShareEmail('');
+            }
+
+            setEditMode(false);
+            const updatedCalendars = await allCalendars();
+            setCalendars(updatedCalendars);
+            setSelectedCalendar(null);
         } catch (error) {
             console.error('Error updating calendar:', error);
         }
@@ -155,7 +164,7 @@ export default function ManageCalendarDialog(props) {
                 accountId: accountId,
                 query: "share",
                 calendarId: calendarId,
-                shareWith: shareEmail
+                email: shareEmail
             })
         });
         return await response.json();
@@ -179,42 +188,56 @@ export default function ManageCalendarDialog(props) {
                             <CircularProgress />
                         </Box>
                     ) : (
-                        // List existing calendars
-                        Array.isArray(calendars) && calendars.map((calendar) => (
-                            <div key={calendar.id} style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
-                                <div style={{ 
-                                    width: '20px', 
-                                    height: '20px', 
-                                    marginRight: '10px' 
-                                }}></div>
-                                <Typography style={{ flexGrow: 1 }}>{calendar.name}</Typography>
-                                <Button 
-                                    variant="outlined" 
-                                    onClick={() => props.onCalendarChange(calendar.id)}
-                                    disabled={calendar.id === currentCalendarId}
-                                >
-                                    Select
-                                </Button>
-                                <Button 
-                                    variant="outlined" 
-                                    onClick={() => {
-                                        setSelectedCalendar(calendar);
-                                        setEditMode(true);
-                                    }}
-                                >
-                                    Edit
-                                </Button>
-                                <Button 
-                                    variant="outlined" 
-                                    color="error"
-                                    onClick={() => handleDeleteCalendar(calendar.id)}
-                                    disabled={calendar.main === true}
-                                    title={calendar.main ? "Main calendar cannot be deleted" : "Delete calendar"}
-                                >
-                                    Delete
-                                </Button>
-                            </div>
-                        ))
+                        // List existing calendars, with main calendar first
+                        Array.isArray(calendars) && 
+                        [...calendars]
+                            .sort((a, b) => {
+                                if (a.main === b.main) return 0;
+                                return a.main ? -1 : 1;
+                            })
+                            .map((calendar) => (
+                                <div key={calendar.id} style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                                    <div style={{ 
+                                        width: '20px', 
+                                        height: '20px', 
+                                        marginRight: '10px' 
+                                    }}></div>
+                                    <Typography style={{ flexGrow: 1 }}>
+                                        {calendar.name} {calendar.main && "(Default)"} {calendar.ownerId !== accountId && "(Shared)"}
+                                    </Typography>
+                                    <Button 
+                                        variant="outlined" 
+                                        onClick={() => props.onCalendarChange(calendar.id)}
+                                        disabled={calendar.id === currentCalendarId}
+                                    >
+                                        Select
+                                    </Button>
+                                    <Button 
+                                        variant="outlined" 
+                                        onClick={() => {
+                                            setSelectedCalendar(calendar);
+                                            setEditMode(true);
+                                        }}
+                                        disabled={calendar.ownerId !== accountId}
+                                        title={calendar.ownerId !== accountId ? "You cannot edit shared calendars" : "Edit calendar"}
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button 
+                                        variant="outlined" 
+                                        color="error"
+                                        onClick={() => handleDeleteCalendar(calendar.id)}
+                                        disabled={calendar.main === true || calendar.ownerId !== accountId}
+                                        title={
+                                            calendar.main ? "Main calendar cannot be deleted" : 
+                                            calendar.ownerId !== accountId ? "You cannot delete shared calendars" : 
+                                            "Delete calendar"
+                                        }
+                                    >
+                                        Delete
+                                    </Button>
+                                </div>
+                            ))
                     )}
 
                     {/* Add new calendar section */}
@@ -272,8 +295,9 @@ export default function ManageCalendarDialog(props) {
                     <TextField
                         fullWidth
                         label="Share with (email)"
+                        value={shareEmail}
+                        onChange={(e) => setShareEmail(e.target.value)}
                         margin="normal"
-                        onChange={(e) => handleShareCalendar(selectedCalendar.id, e.target.value)}
                     />
                 </DialogContent>
                 <DialogActions>

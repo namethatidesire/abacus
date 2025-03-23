@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 
 export async function POST(request, { params }) {
 	try {
-    const { userId, calendarId } = await request.json();
+    const { accountId, calendarId } = await request.json();
     const events = await prisma.calendar.findUnique({
       where: {
         id: calendarId,
         users: {
           some: {
-            id: userId
+            id: accountId
           }
         }
       },

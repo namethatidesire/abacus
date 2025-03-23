@@ -126,7 +126,7 @@ export default class Calendar extends Component {
             const getEvents = await fetch(`http://localhost:3000/api/calendar/events`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: accountId, calendarId })
+                body: JSON.stringify({ accountId, calendarId })
             });
             if (getEvents.ok) {
                 const data = (await getEvents.json()).events || [];

@@ -16,6 +16,8 @@ export async function POST(request) {
         return updateCalendar(data);
     } else if (query === "delete") {
         return deleteCalendar(data);
+    } else if (query === "share") {
+        return shareCalendar(data);
     }
 
     return NextResponse.json({ message: "Invalid query" }, { status: 400 });
@@ -24,17 +26,16 @@ export async function POST(request) {
 // Get user's calendars
 async function getAllCalendars(accountId) {
     try {
-        const calendars = await prisma.calendar.findMany({
+        const calendars = await prisma.user.findUnique({
             where: {
-                users: {
-                    some: {
-                        id: accountId
-                    }
-                },
+                id: accountId,
+            },
+            select: {
+                calendars: true,
             },
         });
 
-        return NextResponse.json({ calendars }, { status: 200 });
+        return NextResponse.json(calendars, { status: 200 });
     } catch (error) {
         console.error(error.stack);
         return NextResponse.json(
@@ -120,6 +121,40 @@ async function deleteCalendar(data) {
                 id: calendarId,
                 main: false,
                 shared: false
+            }
+        });
+
+        return NextResponse.json({ calendar }, { status: 200 });
+    } catch (error) {
+        console.error(error.stack);
+        return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    }
+}
+
+async function shareCalendar(data) {
+    try {
+        const { calendarId, email } = data;
+        const user = await prisma.user.findUnique({
+            where: {
+                email
+            },
+            select: {
+                id: true
+            }
+        });
+
+        const calendar = await prisma.calendar.update({
+            where: {
+                id: calendarId
+            },
+            data: {
+                users: {
+                    connect: [
+                        {
+                            id: user.id
+                        }
+                    ]
+                }
             }
         });
 
