@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/navbar'; 
 import styles from './coursepage.module.css';
+import { Button } from '@mui/material';
 
 interface Course {
   id: string;
@@ -135,7 +136,7 @@ const CoursePage = () => {
   return (
     <div>
       <Navbar />
-      <h1>Courses</h1>
+      <h1 style={{color: "black"}}>Courses</h1>
       {message && <p>{message}</p>}
       {/* Creating each course */}
       {courses.map((course) => (
@@ -155,7 +156,7 @@ const CoursePage = () => {
           </article>
         </details>
       ))}
-      <button onClick={createCourse}>Create Course</button>
+      <Button variant="contained" onClick={createCourse}>Create Course</Button>
     </div>
   );
 };
