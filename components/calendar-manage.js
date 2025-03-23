@@ -25,7 +25,7 @@ export default function ManageCalendarDialog(props) {
     const [editMode, setEditMode] = useState(false);
     const [selectedCalendar, setSelectedCalendar] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [shareEmail, setShareEmail] = useState('');
+    const [shareUsername, setShareUsername] = useState('');
 
     const accountId = props.accountId;
     const currentCalendarId = props.calendarId;
@@ -142,9 +142,9 @@ export default function ManageCalendarDialog(props) {
             const result = await response.json();
 
             // If there's a share email, handle sharing
-            if (shareEmail) {
-                await handleShareCalendar(calendarId, shareEmail);
-                setShareEmail('');
+            if (shareUsername) {
+                await handleShareCalendar(calendarId, shareUsername);
+                setShareUsername('');
             }
 
             setEditMode(false);
@@ -156,7 +156,7 @@ export default function ManageCalendarDialog(props) {
         }
     };
 
-    const handleShareCalendar = async (calendarId, shareEmail) => {
+    const handleShareCalendar = async (calendarId, shareUsername) => {
         const response = await fetch('http://localhost:3000/api/calendar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -164,10 +164,34 @@ export default function ManageCalendarDialog(props) {
                 accountId: accountId,
                 query: "share",
                 calendarId: calendarId,
-                email: shareEmail
+                username: shareUsername
             })
         });
         return await response.json();
+    };
+
+    // Add this new handler function
+    const handleRemoveShare = async (calendarId, username) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accountId: accountId,
+                    query: "unshare",
+                    calendarId: calendarId,
+                    username: username
+                })
+            });
+            const result = await response.json();
+			const updatedCalendars = await allCalendars();
+			setCalendars(updatedCalendars);
+			// Update the selected calendar with new user list
+			const updatedCalendar = updatedCalendars.find(cal => cal.id === selectedCalendar.id);
+			setSelectedCalendar(updatedCalendar);
+        } catch (error) {
+            console.error('Error removing share:', error);
+        }
     };
 
     return (
@@ -294,11 +318,51 @@ export default function ManageCalendarDialog(props) {
                     />
                     <TextField
                         fullWidth
-                        label="Share with (email)"
-                        value={shareEmail}
-                        onChange={(e) => setShareEmail(e.target.value)}
+                        label="Share with (username)"
+                        value={shareUsername}
+                        onChange={(e) => setShareUsername(e.target.value)}
                         margin="normal"
                     />
+                    
+                    {/* Shared Users List */}
+                    {selectedCalendar?.users && selectedCalendar.users.length > 1 && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                Shared with:
+                            </Typography>
+                            {selectedCalendar.users
+                                .filter(user => user.id !== accountId)
+                                .map(user => (
+                                    <Box 
+                                        key={user.id} 
+                                        sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'space-between',
+                                            mb: 1,
+                                            p: 1,
+                                            borderRadius: 1,
+                                            bgcolor: 'background.paper',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover'
+                                            }
+                                        }}
+                                    >
+                                        <Typography variant="body2">
+                                            {user.username}
+                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            color="error"
+                                            onClick={() => handleRemoveShare(selectedCalendar.id, user.username)}
+                                            sx={{ minWidth: 'auto', p: 0.5 }}
+                                        >
+                                            ×
+                                        </Button>
+                                    </Box>
+                                ))}
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setEditMode(false)}>Cancel</Button>

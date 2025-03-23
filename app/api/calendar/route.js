@@ -18,6 +18,8 @@ export async function POST(request) {
         return deleteCalendar(data);
     } else if (query === "share") {
         return shareCalendar(data);
+    } else if (query === "unshare") {
+        return unshareCalendar(data);
     }
 
     return NextResponse.json({ message: "Invalid query" }, { status: 400 });
@@ -31,7 +33,17 @@ async function getAllCalendars(accountId) {
                 id: accountId,
             },
             select: {
-                calendars: true,
+                calendars: {
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                username: true,
+                                email: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -133,10 +145,10 @@ async function deleteCalendar(data) {
 
 async function shareCalendar(data) {
     try {
-        const { calendarId, email } = data;
+        const { calendarId, username } = data;
         const user = await prisma.user.findUnique({
             where: {
-                email
+                username
             },
             select: {
                 id: true
@@ -164,3 +176,39 @@ async function shareCalendar(data) {
         return NextResponse.json({ message: "An error occurred" }, { status: 500 });
     }
 }
+
+async function unshareCalendar(data) {
+    try {
+        const { calendarId, username } = data;
+        const user = await prisma.user.findUnique({
+            where: {
+                username
+            },
+            select: {
+                id: true
+            }
+        });
+
+        // remove user from calendar
+        const calendar = await prisma.calendar.update({
+            where: {
+                id: calendarId
+            },
+            data: {
+                users: {
+                    disconnect: [
+                        {
+                            id: user.id
+                        }
+                    ]
+                }
+            }
+        });
+
+        return NextResponse.json({ calendar }, { status: 200 });
+    } catch (error) {
+        console.error(error.stack);
+        return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    }
+}
+
