@@ -273,15 +273,17 @@ export default class Calendar extends Component {
                                     ))}
                                 </div>
                                 <CalendarDays 
-                                day={currentDay} 
-                                changeCurrentDay={this.changeCurrentDay} 
-                                createEvent={this.createEvent} 
-                                events={events}
-                                highlightedEventId={this.state.highlightedEventId}
-                                onCreateEvent={(date) => this.setState({ 
-                                    showCreateDialog: true, 
-                                    selectedDate: date
-                                })} 
+                                    day={currentDay} 
+                                    changeCurrentDay={this.changeCurrentDay} 
+                                    createEvent={this.createEvent} 
+                                    events={events}
+                                    updateCallback={this.updateEvents}
+                                    accountId={this.state.accountId}
+                                    highlightedEventId={this.state.highlightedEventId}
+                                    onCreateEvent={(date) => this.setState({ 
+                                        showCreateDialog: true, 
+                                        selectedDate: date
+                                    })}
                                 />
                             </>
                         ) : (

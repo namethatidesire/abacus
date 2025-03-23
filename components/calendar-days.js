@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import ShowEventDialog from "./show-event-dialog";
 import { Crimson_Pro } from 'next/font/google';
 import { Typography } from "@mui/material";
 import './calendar-days.css';
@@ -132,7 +133,9 @@ function CalendarDays(props) {
                                         fontSize: '0.8em' // Increase font size for events
                                     }}
                                 >
-                                    {event.title}
+                                    <ShowEventDialog event={event} accountId={props.accountId} updateCallback={props.updateCallback}>
+                                        {event.title}
+                                    </ShowEventDialog>
                                 </div>
                             );
                         })}
