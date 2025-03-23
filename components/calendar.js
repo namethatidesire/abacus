@@ -8,6 +8,7 @@ import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
 import SearchFilterEventsDialog from "./searchFilterEvents";
+import ManageCalendarDialog from "./calendar-manage";
 import PropTypes from 'prop-types';
 
 // Initialize Crimson Pro font
@@ -206,6 +207,11 @@ export default class Calendar extends Component {
         this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
     }
 
+    // Add this method to the Calendar class
+    handleCalendarChange = (newCalendarId) => {
+        this.setState({ calendarId: newCalendarId }, this.fetchEvents);
+    }
+
     render() {
         const { view, currentDay, events } = this.state;
         
@@ -249,6 +255,11 @@ export default class Calendar extends Component {
 
                         <CreateEventDialog accountId={this.state.accountId} calendarId={this.state.calendarId} callback={this.updateEvents}/>
                         <SearchFilterEventsDialog accountId={this.state.accountId}/>
+                        <ManageCalendarDialog 
+                            accountId={this.state.accountId} 
+                            calendarId={this.state.calendarId}
+                            onCalendarChange={this.handleCalendarChange}
+                        />
                     </div>
 
                     {/* Calendar Body */}
