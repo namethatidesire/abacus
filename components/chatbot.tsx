@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 // Add keyframes for the animation
 const pulse = `
@@ -44,6 +45,18 @@ const ChatBot = () => {
   const [eventMap, setEventMap] = useState(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
+  const [newEventData, setNewEventData] = useState({
+    title: '',
+    date: '',
+    start: '',
+    end: '',
+    description: '',
+    location: '',
+    color: '#8CA7D6'
+  });
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [eventCreationSuccess, setEventCreationSuccess] = useState<string | null>(null);
 
   // Interface definitions
   interface MessagePart {
@@ -53,6 +66,14 @@ const ChatBot = () => {
     eventId?: string;
     date?: string;
     time?: string;
+    isEventSuggestion?: boolean;
+    suggestedEvent?: {
+      title: string;
+      date: string;
+      start?: string;
+      end?: string;
+      description?: string;
+    };
   }
 
   interface Message {
@@ -277,14 +298,20 @@ const ChatBot = () => {
             
             Be concise and provide relevant information. Avoid repeating the user's question.
             
-            IMPORTANT: When you mention an event in your response, always use the EXACT title of the event 
-            as it appears in the schedule information. This ensures the UI can recognize and highlight these events.
+            VERY IMPORTANT:
+            1. When you mention an event in your response, always use the EXACT title of the event 
+            as it appears in the schedule information.
+            
+            2. Only suggest the user to create an event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
+            "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Description: description here]"
+
+            3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
+            
+            For example:
+            "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Description: Weekly team sync-up]"
             
             If they ask about specific dates or times, refer to the schedule information provided.
-            If they ask about creating or modifying events, suggest they use the calendar interface.
             If they ask for schedule analysis, provide insights based on their event distribution.
-            
-            Format dates and times as follows: "Monday Jan. 1 at 9:00 AM".
             
             If their question is unclear or not about their schedule, ask clarifying questions.
           `,
@@ -372,6 +399,60 @@ const ChatBot = () => {
     return summary;
   };
 
+  // Process response text to find event suggestions
+  const processEventSuggestions = (text: string): MessagePart[] => {
+    if (!text) return [{ text, isHighlighted: false }];
+    
+    // Regular expression to match suggested events in the format:
+    // [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Description: description here]
+    const eventSuggestionRegex = /\[Title: ([^|]+)\s*\|\s*Date: ([^|]+)\s*\|\s*Description: ([^\]]+)\]/g;
+    
+    // Also detect existing events
+    const existingEventsHighlights = highlightEvents(text);
+    
+    // Combine both event detection mechanisms
+    let result: MessagePart[] = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = eventSuggestionRegex.exec(text)) !== null) {
+      // Get text before the match
+      const beforeText = text.substring(lastIndex, match.index);
+      
+      // Process the text before the match for existing events
+      if (beforeText) {
+        const processedBeforeText = highlightEvents(beforeText);
+        result = [...result, ...processedBeforeText];
+      }
+      
+      // Add the suggested event as a special part
+      const suggestedEvent = {
+        title: match[1].trim(),
+        date: match[2].trim(),
+        description: match[3].trim()
+      };
+      
+      result.push({
+        text: match[0],
+        isHighlighted: true,
+        isEventSuggestion: true,
+        suggestedEvent,
+        color: '#4CAF50' // Green color for suggested events
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Process the remaining text for existing events
+    if (lastIndex < text.length) {
+      const remainingText = text.substring(lastIndex);
+      const processedRemainingText = highlightEvents(remainingText);
+      result = [...result, ...processedRemainingText];
+    }
+    
+    return result;
+  };
+
   // Highlight event titles in message text
   const highlightEvents = (text: string): MessagePart[] => {
     if (!text || eventMap.size === 0) return [{ text, isHighlighted: false }];
@@ -379,6 +460,10 @@ const ChatBot = () => {
     // Create a regex pattern that matches event titles
     // Sort titles by length (descending) to match longer titles first
     const eventTitles = Array.from(eventMap.keys()).sort((a, b) => b.length - a.length);
+    
+    if (eventTitles.length === 0) {
+      return [{ text, isHighlighted: false }];
+    }
     
     // Escape special regex characters in titles
     const escapedTitles = eventTitles.map(title => 
@@ -464,7 +549,7 @@ const ChatBot = () => {
         id: messages.length + 2, 
         text: claudeResponse, 
         sender: "bot" as const,
-        parts: highlightEvents(claudeResponse) // Highlighted text for bot responses
+        parts: processEventSuggestions(claudeResponse) // Process both highlighting and event suggestions
       };
       
       setMessages(prev => [...prev, botMessage]);
@@ -484,6 +569,123 @@ const ChatBot = () => {
     }
   };
 
+  // Create a new event based on suggestion
+const createEvent = async (suggestedEvent: any) => {
+  if (!userId) {
+    setError('User ID not available. Please log in again.');
+    return;
+  }
+  
+  setIsCreatingEvent(true);
+  setEventCreationSuccess(null);
+  
+  try {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+    
+    // Parse the date (assuming it's in YYYY-MM-DD format)
+    let eventDate = new Date(suggestedEvent.date);
+    
+    // Prepare the event data according to the Prisma schema
+    const eventData = {
+      // No need to manually set id, Prisma will generate with @default(uuid())
+      userId: userId,
+      title: suggestedEvent.title,
+      date: eventDate.toISOString(), // Main date field
+      recurring: false,
+      color: suggestedEvent.color || newEventData.color || '#8CA7D6',
+      type: 'EVENT',
+      // Handle tags properly - must be connected, not created inline
+      tags: {
+        connect: suggestedEvent.tags?.map((tag: string) => ({ id: tag })) || []
+      },
+      description: suggestedEvent.description || ''
+    };
+
+    console.log('Creating event with data:', eventData);
+    
+    const response = await fetch(`/api/event/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(eventData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create event: ${response.status}`);
+    }
+    
+    const createdEvent = await response.json();
+    
+    // Update local events state
+    await fetchUserEvents(userId).then(updatedEvents => {
+      if (updatedEvents) {
+        setEvents(updatedEvents);
+        buildEventMap(updatedEvents);
+      }
+    });
+
+    // Trigger calendar refresh by dispatching a custom event
+    const refreshEvent = new CustomEvent('calendarRefresh', {
+      detail: {
+        newEvent: createdEvent
+      }
+    });
+    document.dispatchEvent(refreshEvent);
+    
+    setEventCreationSuccess(`Successfully created "${suggestedEvent.title}" event!`);
+    
+    // Format display date and times for the confirmation message
+    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const displayDate = eventDate.toLocaleDateString(undefined, dateOptions);
+    
+    // Add a message from the bot confirming event creation
+    const confirmationMessage: Message = {
+      id: Date.now(),
+      text: `Event created: "${suggestedEvent.title}" on ${displayDate}.`,
+      sender: "bot",
+      parts: undefined
+    };
+    
+    setMessages(prevMessages => [...prevMessages, confirmationMessage]);
+    
+    // Clear event creation success message after a delay
+    setTimeout(() => {
+      setEventCreationSuccess(null);
+    }, 5000);
+    
+    return createdEvent;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    setError(error instanceof Error ? error.message : 'Failed to create event.');
+    return null;
+  } finally {
+    setIsCreatingEvent(false);
+    setCreateEventModalOpen(false);
+  }
+};
+
+  // Handle click on suggested event
+  const handleEventSuggestionClick = (suggestedEvent: any) => {
+    setNewEventData({
+      title: suggestedEvent.title,
+      date: suggestedEvent.date,
+      start: suggestedEvent.start,
+      end: suggestedEvent.end,
+      description: suggestedEvent.description,
+      location: suggestedEvent.location || '',
+      color: '#8CA7D6'
+    });
+    
+    // Either show modal or create immediately
+    // For simplicity, we'll create immediately
+    createEvent(suggestedEvent);
+  };
+
   // Auto-scroll to the most recent message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -501,8 +703,7 @@ const ChatBot = () => {
       }
     }
     
-    // For hex and other colors, use a simple algorithm
-    // Convert to hex if not already
+    // For hex and other colors
     let hex = bgColor;
     if (bgColor.startsWith('rgb')) {
       const rgbValues = bgColor.match(/\d+/g);
@@ -539,7 +740,30 @@ const ChatBot = () => {
             return <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part.text}</span>;
           }
           
-          // Highlighted event without tooltip
+          // For event suggestions (clickable to create)
+          if (part.isEventSuggestion && part.suggestedEvent) {
+            return (
+              <span
+                key={index}
+                className="relative block my-2 px-3 py-2 rounded border border-green-500 bg-green-50"
+              >
+                <div className="font-medium text-green-800 mb-1">Suggested Event:</div>
+                <div className="text-gray-700 mb-2">
+                  <strong>{part.suggestedEvent.title}</strong> on {part.suggestedEvent.date}
+                </div>
+                <div className="text-sm text-gray-600 mb-2">{part.suggestedEvent.description}</div>
+                <button
+                  onClick={() => handleEventSuggestionClick(part.suggestedEvent)}
+                  className="text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50"
+                  disabled={isCreatingEvent}
+                >
+                  {isCreatingEvent ? "Creating..." : "Add to Calendar"}
+                </button>
+              </span>
+            );
+          }
+          
+          // For existing events (highlight only)
           return (
             <span
               key={index}
@@ -578,7 +802,6 @@ const ChatBot = () => {
               >
                 {part.text}
               </span>
-              {/* Tooltip removed */}
             </span>
           );
         })}
@@ -602,6 +825,13 @@ const ChatBot = () => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-sm">
           {error}
+        </div>
+      )}
+      
+      {/* Success Message */}
+      {eventCreationSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 text-sm">
+          {eventCreationSuccess}
         </div>
       )}
       

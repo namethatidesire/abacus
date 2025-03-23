@@ -70,8 +70,49 @@ export default class Calendar extends Component {
     }
 
     componentWillUnmount() {
-        // Remove event listener when component unmounts
+        // Remove event listeners when component unmounts
         document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.removeEventListener('calendarRefresh', this.handleCalendarRefresh);
+    }
+    handleCalendarRefresh = (event) => {
+        console.log('Calendar refresh event received:', event.detail);
+        // Call your fetchEvents method to reload calendar data
+        this.fetchEvents();
+    };
+
+    componentDidMount = async() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            alert('Missing token. Please log in again.');
+            // Redirect to login page Session expired
+            window.location.href = '/login';
+        }
+
+        // Add event listeners
+        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.addEventListener('calendarRefresh', this.handleCalendarRefresh);
+
+        try {
+            const response = await fetch(`api/account/authorize`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.status === 200) {
+                const { userId } = data.decoded;
+                this.setState({ accountId: userId }, this.fetchEvents);
+            } else {
+                alert('Invalid token. Please log in again.');
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            alert('Error verifying token. Please log in again.');
+            window.location.href = '/login';
+        }
     }
 
     // Handle highlight event from chat
