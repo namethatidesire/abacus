@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // create event
 export async function POST(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags } = await request.json();
+    const { id, userId, title, date, recurring, color, description, endDate, type, tags, reminder } = await request.json();
     const event = await prisma.event.create({
       data: {
         id,
@@ -14,10 +14,18 @@ export async function POST(request) {
         recurring,
         color,
         type,
-        tags,
+        tags: {
+          connectOrCreate: tags.map(tag => ({
+            where: { name: tag.name || tag },
+            create: {
+              name: tag.name || tag,
+              color: tag.color || '#FF0000'
+            }
+          }))
+        },
         description,
-        start,
-        end
+        endDate,
+        reminder
       }
     });
     

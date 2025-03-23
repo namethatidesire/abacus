@@ -5,14 +5,16 @@ import {
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle,
-    TextField
+    DialogTitle, Select,
+    TextField,
+    MenuItem, InputLabel, FormControl
 } from "@mui/material";
 import {CirclePicker} from "react-color";
 import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { Description } from "@mui/icons-material";
+import Tags from "./tags";
 
 // @param props: accountId, callback
 // accountId: the id of the user creating the event
@@ -22,6 +24,11 @@ export default function CreateEventDialog(props) {
     const [eventColor, setEventColor] = React.useState('#FF0000');
     const [eventTitle, setEventTitle] = React.useState('');
     const [eventDateTime, setEventDateTime] = React.useState(dayjs());
+    const [eventEndDateTime, setEventEndDateTime] = React.useState(dayjs());
+    const [eventDescription, setEventDescription] = React.useState('');
+    const [eventRecurring, setEventRecurring] = React.useState('None');
+    const [eventReminder, setEventReminder] = React.useState('None');
+    const [eventTags, setEventTags] = React.useState([]);
 
     const accountId = props.accountId;
 
@@ -33,26 +40,39 @@ export default function CreateEventDialog(props) {
         setOpen(false);
     };
 
+    const handleTagsChange = (tags) => {
+        let realTags = [];
+        for (let tag of tags) {
+            if (typeof tag === "string") {
+                let newTag = {
+                    name: tag,
+                    color: "#FF0000",
+                }
+                realTags.push(newTag);
+            } else {
+                realTags.push(tag);
+            }
+        }
+        setEventTags(realTags);
+    }
+
     // Function to create an event
     const createEvent = async function() {
 
         console.log(eventTitle);
 
-        // Prompt the user for the event title, color, and time
-        // const eventTitle = prompt("Enter event title:");
-        // const eventColor = prompt("Enter event color (e.g., #FF0000):");
-        // const eventTime = prompt("Enter event time (HH:MM):");
         const newEvent = {
             userId: accountId,
             title: eventTitle,
             date: eventDateTime.toISOString(),
             time: eventDateTime.format('HH:mm'),
-            recurring: false,
+            recurring: eventRecurring,
             color: eventColor, 
-            description: null,
-            start: null,
-            end: null, 
-            type: "EVENT"
+            description: eventDescription,
+            endDate: eventEndDateTime.toISOString(),
+            type: "EVENT",
+            reminder: eventReminder,
+            tags: eventTags,
         };
 
         try {
@@ -94,17 +114,68 @@ export default function CreateEventDialog(props) {
                     value={eventTitle}
                     onChange={(e) => setEventTitle(e.target.value)}
                 />
-                <div style={{margin: "10px 0"}}>
+                <div style={{margin: "10px 0 20px 0"}}>
                     <DialogContentText>Choose a color:</DialogContentText>
                     <ColorPicker color={eventColor} onChangeComplete={setEventColor} />
                 </div>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DateTimePicker
-                        label={"Event Date and Time:"}
-                        value={eventDateTime}
-                        onChange={(newValue) => setEventDateTime(newValue)}
-                    />
-                </LocalizationProvider>
+                <div style={{margin: "10px 0"}}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DateTimePicker
+                            label={"Event Start Time:"}
+                            value={eventDateTime}
+                            onChange={(newValue) => setEventDateTime(newValue)}
+                        />
+                        <DateTimePicker
+                            label={"Event End Time:"}
+                            value={eventEndDateTime}
+                            onChange={(newValue) => setEventEndDateTime(newValue)}
+                        />
+                    </LocalizationProvider>
+                </div>
+                <TextField
+                    label="Description (optional)"
+                    margin="dense"
+                    multiline
+                    fullWidth
+                    onChange={(e) => setEventDescription(e.target.value)}
+                />
+                <div>
+                    {/*<FormControl margin="dense" sx={{m:1, minWidth: 120}}>
+                        <InputLabel id="recurring-select-label">Recurring</InputLabel>
+                        <Select
+                            variant="outlined"
+                            label="Recurring"
+                            labelId="recurring-select-label"
+                            value={eventRecurring}
+                            onChange={(e) => setEventRecurring(e.target.value)}
+                        >
+                            <MenuItem value="None">None</MenuItem>
+                            <MenuItem value="Daily">Daily</MenuItem>
+                            <MenuItem value="Weekly">Weekly</MenuItem>
+                            <MenuItem value="Monthly">Monthly</MenuItem>
+                            <MenuItem value="Yearly">Yearly</MenuItem>
+                        </Select>
+                    </FormControl>*/}
+                    <FormControl margin="dense" sx={{m:1, minWidth: 120}}>
+                        <InputLabel id="reminder-select-label">Reminder</InputLabel>
+                        <Select
+                            variant="outlined"
+                            label="Reminder"
+                            labelId="reminder-select-label"
+                            value={eventReminder}
+                            onChange={(e) => setEventReminder(e.target.value)}
+                        >
+                            <MenuItem value="None">None</MenuItem>
+                            <MenuItem value="5 minutes">5 minutes</MenuItem>
+                            <MenuItem value="15 minutes">15 minutes</MenuItem>
+                            <MenuItem value="30 minutes">30 minutes</MenuItem>
+                            <MenuItem value="1 hour">1 hour</MenuItem>
+                            <MenuItem value="1 day">1 day</MenuItem>
+                            <MenuItem value="1 week">1 week</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Tags value={eventTags} onChange={handleTagsChange} />
+                </div>
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Cancel</Button>
