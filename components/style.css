@@ -1,13 +1,15 @@
 /* Main calendar container */
 .calendar {
   width: 100%;
-  max-width: 900px;
-  min-height: 600px;
+  max-width: 100%; /* Changed from 900px to 100% */
+  min-height: 90vh; /* Changed from 600px to 90vh */
   display: flex;
   flex-direction: column;
   margin: 0 auto;
   color: #333;
   background-color: #fff;
+  padding-left: 20rem;
+  padding-right: 20rem;
 }
 
 /* Calendar Header */
@@ -67,6 +69,7 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: calc(90vh - 120px); /* Subtract header height */
 }
 
 /* Weekday labels */
@@ -91,16 +94,22 @@
   border-top: 1px solid #E5E5E5;
   border-left: 1px solid #E5E5E5;
   flex-grow: 1;
+  height: 100%; /* Use full height of parent */
 }
 
-/* Calendar day cells */
 .calendar-day {
-  min-height: 80px;
+  height: auto;
+  min-height: 15vh;
+  width: 100%;
   border-right: 1px solid #E5E5E5;
   border-bottom: 1px solid #E5E5E5;
   padding: 0.5rem;
   position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .calendar-day p {
   margin: 0;
@@ -115,8 +124,18 @@
 
 /* Today's date */
 .today p {
-  color: #CC0000 !important;
+  color: rgb(255, 255, 255) !important;
   font-weight: bold;
+  text-align: right;
+  position: relative;
+  border-radius: 50%;
+  background-color: #8CA7D6;
+  width: 1.8em;
+  height: 1.8em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
 }
 
 /* Selected date */
@@ -127,7 +146,7 @@
 /* Weekly view styles */
 .weekly-view {
   flex-grow: 1;
-  height: 600px;  /* Fixed height to match monthly view */
+  height: 100%; /* Changed from fixed 600px */
 }
 
 .weekly-grid {
@@ -138,12 +157,15 @@
 }
 
 .weekly-day {
+  height: auto; /* Changed from fixed 600px */
+  min-height: calc(90vh - 150px); /* Relative to viewport height */
+  width: 100%;
   border-right: 1px solid #E5E5E5;
   border-bottom: 1px solid #E5E5E5;
   border-top: 1px solid #E5E5E5;
-  min-height: 600px;
   padding: 0.5rem;
   background-color: white;
+  overflow-y: auto; /* Add scrolling for overflow content */
 }
 
 .day-header {
@@ -158,20 +180,22 @@
 }
 
 .day-events {
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .week-event {
-  margin: 0.25rem 0;
-  padding: 0.25rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  margin: 0.1rem 0;
+  padding: 0.15rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 
 .event-time {
   display: block;
   font-weight: 500;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.1rem;
+  font-size: 0.7rem;
 }
 
 .event-title {
@@ -179,4 +203,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+}
+
+.highlighted-event {
+  outline: 2px solid #FBE59D !important;
+  font-weight: 600 !important;
+  position: relative;
+  box-shadow: 0 0 8px 2px rgba(251, 229, 157, 0.7) !important;
+  z-index: 10 !important;
+  /* Use transform-origin to grow from center */
+  transform-origin: center center;
+  /* Use a subtle scale that won't break layouts */
+  transform: scale(1.03);
+  /* Add transition for smooth effect */
+  transition: all 0.2s ease-in-out;
 }

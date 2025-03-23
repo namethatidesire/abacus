@@ -3,19 +3,44 @@ import dayjs from "dayjs";
 import { Button } from "@mui/material";
 import { BaseEventDialog } from "./base-event-dialog";
 
-export default function CreateEventDialog({ accountId, callback }) {
-    const [open, setOpen] = React.useState(false);
+// @param props: accountId, callback, open, onClose, selectedDate
+// accountId: the id of the user creating the event
+// callback: a function to call after creating the event (e.g. to update the calendar)
+// open: boolean to control dialog visibility
+// onClose: function to call when closing the dialog
+// selectedDate: date object for pre-populating the event date
+export default function CreateEventDialog(props) {
+    const accountId = props.accountId;
+    const open = props.open || false;
+    
     const [eventData, setEventData] = React.useState({
         title: '',
         color: '#FF0000',
-        startDateTime: dayjs(),
-        endDateTime: dayjs(),
+        startDateTime: props.selectedDate ? dayjs(props.selectedDate) : dayjs(),
+        endDateTime: props.selectedDate ? dayjs(props.selectedDate).add(1, 'hour') : dayjs().add(1, 'hour'),
         description: '',
         recurring: 'None',
         reminder: 'None',
         tags: []
     });
 
+    React.useEffect(() => {
+        if (props.selectedDate) {
+            setEventData(prev => ({
+                ...prev,
+                startDateTime: dayjs(props.selectedDate),
+                endDateTime: dayjs(props.selectedDate).add(1, 'hour')
+            }));
+        }
+    }, [props.selectedDate]);
+
+    const handleClose = () => {
+        if (props.onClose) {
+            props.onClose();
+        }
+    };
+
+    // Function to create an event
     const createEvent = async () => {
         const newEvent = {
             userId: accountId,
@@ -44,24 +69,42 @@ export default function CreateEventDialog({ accountId, callback }) {
         } catch (error) {
             console.error('Error creating event:', error);
         }
-        callback();
-        setOpen(false);
+        
+        props.callback();
+        handleClose();
     };
 
+    // If the component is being used with the Button (old style)
+    if (!props.open && !props.onClose) {
+        return (
+            <React.Fragment>
+                <Button variant="outlined" onClick={() => setOpen(true)}>
+                    Create New Event
+                </Button>
+                <BaseEventDialog
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    title="Create New Event"
+                    eventData={eventData}
+                    setEventData={setEventData}
+                    onSubmit={createEvent}
+                    submitButtonText="Create Event"
+                />
+            </React.Fragment>
+        );
+    }
+
+    // If the component is being used with external open/close control (new style)
     return (
-        <React.Fragment>
-            <Button variant="outlined" onClick={() => setOpen(true)}>
-                Create New Event
-            </Button>
-            <BaseEventDialog
-                open={open}
-                onClose={() => setOpen(false)}
-                title="Create New Event"
-                eventData={eventData}
-                setEventData={setEventData}
-                onSubmit={createEvent}
-                submitButtonText="Create Event"
-            />
-        </React.Fragment>
+        <BaseEventDialog
+            open={open}
+            onClose={handleClose}
+            title="Create New Event"
+            eventData={eventData}
+            setEventData={setEventData}
+            onSubmit={createEvent}
+            submitButtonText="Create Event"
+            position={props.position}
+        />
     );
 }

@@ -28,7 +28,11 @@ export default class Calendar extends Component {
             currentDay: new Date(),
             events: {},
             accountId: null,
-            view: 'month' // 'month' or 'week'
+            view: 'month', // 'month' or 'week'
+            highlightedEventId: null,
+            showCreateDialog: false,
+            selectedDate: null,
+            dialogPosition: null
         }
     }
 
@@ -40,6 +44,10 @@ export default class Calendar extends Component {
             window.location.href = '/login';
         }
 
+        // Add event listener for highlighting events from chat
+        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.addEventListener('calendarRefresh', this.handleCalendarRefresh);
+        
         try {
             const response = await fetch(`api/account/authorize`, {
                 method: 'GET',
@@ -63,6 +71,27 @@ export default class Calendar extends Component {
             // Redirect to login page Session expired  
             window.location.href = '/login';
         }
+    }
+
+    componentWillUnmount() {
+        // Remove event listeners when component unmounts
+        document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+        document.removeEventListener('calendarRefresh', this.handleCalendarRefresh);
+    }
+    handleCalendarRefresh = (event) => {
+        console.log('Calendar refresh event received:', event.detail);
+        // Call your fetchEvents method to reload calendar data
+        this.fetchEvents();
+    };
+
+    // Handle highlight event from chat
+    handleHighlightEvent = (e) => {
+        const { eventId, highlight } = e.detail;
+        
+        // Set highlighted event ID in state
+        this.setState({ 
+            highlightedEventId: highlight ? eventId : null 
+        });
     }
 
     fetchEvents = async () => {
@@ -156,7 +185,7 @@ export default class Calendar extends Component {
         const { view, currentDay, events } = this.state;
         
         return (
-            <div>
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Navbar />
 
                 <div className="calendar">
@@ -195,9 +224,34 @@ export default class Calendar extends Component {
                             <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
-                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
+                        {/* Add Create Event Button */}
+                        <button 
+                            className="nav-button"
+                            onClick={() => this.setState({ showCreateDialog: true })}
+                            style={{ 
+                                backgroundColor: '#1976d2',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Create Event
+                        </button>
+
+                        <CreateEventDialog 
+                            accountId={this.state.accountId}
+                            callback={this.updateEvents}
+                            open={this.state.showCreateDialog}
+                            onClose={() => this.setState({ showCreateDialog: false })}
+                            selectedDate={this.state.selectedDate}
+                            position={this.state.dialogPosition}
+                        />
                         <SearchFilterEventsDialog accountId={this.state.accountId}/>
                     </div>
+
+                    {/* Add CreateEventDialog with selected date */}
 
                     {/* Calendar Body */}
                     <div className="calendar-body">
@@ -225,6 +279,11 @@ export default class Calendar extends Component {
                                     events={events}
                                     updateCallback={this.updateEvents}
                                     accountId={this.state.accountId}
+                                    highlightedEventId={this.state.highlightedEventId}
+                                    onCreateEvent={(date) => this.setState({ 
+                                        showCreateDialog: true, 
+                                        selectedDate: date
+                                    })}
                                 />
                             </>
                         ) : (

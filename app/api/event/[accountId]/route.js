@@ -94,19 +94,42 @@ export async function GET(request, { params }) {
 }
 
 
-// delete event
+// delete event - CORRECTED VERSION
 export async function DELETE(request) {
   try {
-    const { id } = request.query;
-    await prisma.event.delete({
-      where: {
-        id
+    // In App Router, we need to get the URL and extract the ID parameter
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    const id = searchParams.get("id");
+    
+    if (!id) {
+      return NextResponse.json({ message: "Event ID is required" }, { status: 400 });
+    }
+
+    // First, disconnect all tags from the event
+    await prisma.event.update({
+      where: { id },
+      data: {
+        tags: {
+          set: [] // This removes all tag connections
+        }
       }
     });
     
-    return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+    // Then delete the event
+    const deletedEvent = await prisma.event.delete({
+      where: { id }
+    });
+    
+    return NextResponse.json({ 
+      message: "Event deleted successfully", 
+      event: deletedEvent 
+    }, { status: 200 });
   } catch (error) {
     console.error(error.stack);
-    return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    return NextResponse.json({ 
+      message: "Failed to delete event", 
+      error: error.message 
+    }, { status: 500 });
   }
 }
