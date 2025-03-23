@@ -18,19 +18,26 @@ import { Description } from "@mui/icons-material";
 // accountId: the id of the user creating the event
 // callback: a function to call after creating the event (e.g. to update the calendar)
 export default function CreateEventDialog(props) {
-    const [open, setOpen] = React.useState(false);
     const [eventColor, setEventColor] = React.useState('#FF0000');
     const [eventTitle, setEventTitle] = React.useState('');
-    const [eventDateTime, setEventDateTime] = React.useState(dayjs());
+    const [eventDateTime, setEventDateTime] = React.useState(
+        props.selectedDate ? dayjs(props.selectedDate) : dayjs()
+    );
+
+    React.useEffect(() => {
+        if (props.selectedDate) {
+            setEventDateTime(dayjs(props.selectedDate));
+        }
+    }, [props.selectedDate]);
 
     const accountId = props.accountId;
 
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
+    const open = props.open || false;
 
     const handleClose = () => {
-        setOpen(false);
+        if (props.onClose) {
+            props.onClose();
+        }
     };
 
     // Function to create an event
@@ -74,11 +81,22 @@ export default function CreateEventDialog(props) {
         handleClose();
     }
 
-    return <React.Fragment>
-        <Button variant="outlined" onClick={handleClickOpen}>
-            Create New Event
-        </Button>
-        <Dialog open={open} onClose={handleClose}>
+    return (
+        <Dialog 
+            open={open} 
+            onClose={handleClose}
+            PaperProps={{
+                style: {
+                    maxWidth: '400px'
+                }
+            }}
+            hideBackdrop={true}  // Remove the backdrop/blur effect
+            disableEnforceFocus  // Allow focusing outside elements
+            style={{
+                position: 'absolute',
+                zIndex: 1000
+            }}
+        >
             <DialogTitle>Create New Event</DialogTitle>
             <DialogContent>
                 <TextField
@@ -111,7 +129,7 @@ export default function CreateEventDialog(props) {
                 <Button onClick={createEvent}>Create Event</Button>
             </DialogActions>
         </Dialog>
-    </React.Fragment>
+    );
 }
 
 function ColorPicker({ color, onChangeComplete }) {

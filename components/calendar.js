@@ -29,7 +29,10 @@ export default class Calendar extends Component {
             events: {},
             accountId: null,
             view: 'month', // 'month' or 'week'
-            highlightedEventId: null
+            highlightedEventId: null,
+            showCreateDialog: false,
+            selectedDate: null,
+            dialogPosition: null
         }
     }
 
@@ -43,7 +46,8 @@ export default class Calendar extends Component {
 
         // Add event listener for highlighting events from chat
         document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
-
+        document.addEventListener('calendarRefresh', this.handleCalendarRefresh);
+        
         try {
             const response = await fetch(`api/account/authorize`, {
                 method: 'GET',
@@ -79,41 +83,6 @@ export default class Calendar extends Component {
         // Call your fetchEvents method to reload calendar data
         this.fetchEvents();
     };
-
-    componentDidMount = async() => {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-            alert('Missing token. Please log in again.');
-            // Redirect to login page Session expired
-            window.location.href = '/login';
-        }
-
-        // Add event listeners
-        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
-        document.addEventListener('calendarRefresh', this.handleCalendarRefresh);
-
-        try {
-            const response = await fetch(`api/account/authorize`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-            if (data.status === 200) {
-                const { userId } = data.decoded;
-                this.setState({ accountId: userId }, this.fetchEvents);
-            } else {
-                alert('Invalid token. Please log in again.');
-                window.location.href = '/login';
-            }
-        } catch (error) {
-            alert('Error verifying token. Please log in again.');
-            window.location.href = '/login';
-        }
-    }
 
     // Handle highlight event from chat
     handleHighlightEvent = (e) => {
@@ -255,9 +224,34 @@ export default class Calendar extends Component {
                             <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
                         </button>
 
-                        <CreateEventDialog accountId={this.state.accountId} callback={this.updateEvents}/>
+                        {/* Add Create Event Button */}
+                        <button 
+                            className="nav-button"
+                            onClick={() => this.setState({ showCreateDialog: true })}
+                            style={{ 
+                                backgroundColor: '#1976d2',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Create Event
+                        </button>
+
+                        <CreateEventDialog 
+                            accountId={this.state.accountId}
+                            callback={this.updateEvents}
+                            open={this.state.showCreateDialog}
+                            onClose={() => this.setState({ showCreateDialog: false })}
+                            selectedDate={this.state.selectedDate}
+                            position={this.state.dialogPosition}
+                        />
                         <SearchFilterEventsDialog accountId={this.state.accountId}/>
                     </div>
+
+                    {/* Add CreateEventDialog with selected date */}
 
                     {/* Calendar Body */}
                     <div className="calendar-body">
@@ -283,7 +277,11 @@ export default class Calendar extends Component {
                                 changeCurrentDay={this.changeCurrentDay} 
                                 createEvent={this.createEvent} 
                                 events={events}
-                                highlightedEventId={this.state.highlightedEventId} 
+                                highlightedEventId={this.state.highlightedEventId}
+                                onCreateEvent={(date) => this.setState({ 
+                                    showCreateDialog: true, 
+                                    selectedDate: date
+                                })} 
                                 />
                             </>
                         ) : (
