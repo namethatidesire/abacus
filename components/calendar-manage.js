@@ -8,7 +8,8 @@ import {
     DialogTitle,
     TextField,
     Typography,
-    Box
+    Box,
+    CircularProgress
 } from "@mui/material";
 import {CirclePicker} from "react-color";
 import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
@@ -23,7 +24,7 @@ export default function ManageCalendarDialog(props) {
 	const [newCalendarDesc, setNewCalendarDesc] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [selectedCalendar, setSelectedCalendar] = useState(null);
-
+    const [isLoading, setIsLoading] = useState(false);
 
     const accountId = props.accountId;
     const currentCalendarId = props.calendarId;
@@ -53,71 +54,96 @@ export default function ManageCalendarDialog(props) {
 
 	useEffect(() => {
         const fetchCalendars = async () => {
-            const fetchedCalendars = await allCalendars();
-            setCalendars(fetchedCalendars || []);
+            setIsLoading(true);
+            try {
+                const fetchedCalendars = await allCalendars();
+                setCalendars(fetchedCalendars || []);
+            } catch (error) {
+                console.error('Error fetching calendars:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
         
         fetchCalendars();
     }, [accountId]); // Add accountId as dependency since it's used in allCalendars
 
     const handleAddCalendar = async () => {
-        const response = await fetch('http://localhost:3000/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                accountId: accountId,
-                query: "create",
-                name: newCalendarName,
-				description: newCalendarDesc
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            setCalendars(await allCalendars());
-            setNewCalendarName('');
+        try {
+            const response = await fetch('http://localhost:3000/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accountId: accountId,
+                    query: "create",
+                    name: newCalendarName,
+                    description: newCalendarDesc
+                })
+            });
+            const result = await response.json();
+			const updatedCalendars = await allCalendars();
+			setCalendars(updatedCalendars);
+			setNewCalendarName('');
+			setNewCalendarDesc('');
+        } catch (error) {
+            console.error('Error adding calendar:', error);
         }
     };
 
     const handleDeleteCalendar = async (calendarId) => {
-        // Find the calendar to check if it's a main calendar
-        const calendarToDelete = calendars.find(cal => cal.id === calendarId);
-        if (calendarToDelete?.main === true) {
-            console.error('Cannot delete main calendar');
-            return;
-        }
+        try {
+            const calendarToDelete = calendars.find(cal => cal.id === calendarId);
+            if (calendarToDelete?.main === true) {
+                console.error('Cannot delete main calendar');
+                return;
+            }
 
-        const response = await fetch('http://localhost:3000/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                accountId: accountId,
-                query: "delete",
-                calendarId: calendarId
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            setCalendars(await allCalendars());
+            const response = await fetch('http://localhost:3000/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accountId: accountId,
+                    query: "delete",
+                    calendarId: calendarId
+                })
+            });
+            const result = await response.json();
+            
+            // If deleting current calendar, switch to main calendar
+            if (calendarId === currentCalendarId) {
+                const mainCalendar = calendars.find(cal => cal.main === true);
+                if (mainCalendar) {
+                    props.onCalendarChange(mainCalendar.id);
+                }
+            }
+
+            const updatedCalendars = await allCalendars();
+            setCalendars(updatedCalendars);
+        } catch (error) {
+            console.error('Error deleting calendar:', error);
         }
     };
 
     const handleUpdateCalendar = async (calendarId) => {
-        const response = await fetch('http://localhost:3000/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                accountId: accountId,
-                query: "update",
-                calendarId: calendarId,
-                name: selectedCalendar.name,
-                description: selectedCalendar.description
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            setCalendars(await allCalendars());
-            setEditMode(false);
-            setSelectedCalendar(null);
+        try {
+            const response = await fetch('http://localhost:3000/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accountId: accountId,
+                    query: "update",
+                    calendarId: calendarId,
+                    name: selectedCalendar.name,
+                    description: selectedCalendar.description
+                })
+            });
+            const result = await response.json();
+			setEditMode(false);
+			const updatedCalendars = await allCalendars();
+			setCalendars(updatedCalendars);
+			setSelectedCalendar(null);
+        } catch (error) {
+            console.error('Error updating calendar:', error);
         }
     };
 
@@ -147,42 +173,49 @@ export default function ManageCalendarDialog(props) {
                         Select a calendar to view and manage events.
                     </DialogContentText>
                     
-                    {/* List existing calendars */}
-                    {Array.isArray(calendars) && calendars.map((calendar) => (
-                        <div key={calendar.id} style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
-                            <div style={{ 
-                                width: '20px', 
-                                height: '20px', 
-                                marginRight: '10px' 
-                            }}></div>
-                            <Typography style={{ flexGrow: 1 }}>{calendar.name}</Typography>
-                            <Button 
-                                variant="outlined" 
-                                onClick={() => props.onCalendarChange(calendar.id)}
-                                disabled={calendar.id === currentCalendarId}
-                            >
-                                Select
-                            </Button>
-                            <Button 
-                                variant="outlined" 
-                                onClick={() => {
-                                    setSelectedCalendar(calendar);
-                                    setEditMode(true);
-                                }}
-                            >
-                                Edit
-                            </Button>
-                            <Button 
-                                variant="outlined" 
-                                color="error"
-                                onClick={() => handleDeleteCalendar(calendar.id)}
-                                disabled={calendar.main === true}
-                                title={calendar.main ? "Main calendar cannot be deleted" : "Delete calendar"}
-                            >
-                                Delete
-                            </Button>
-                        </div>
-                    ))}
+                    {/* Loading indicator */}
+                    {isLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        // List existing calendars
+                        Array.isArray(calendars) && calendars.map((calendar) => (
+                            <div key={calendar.id} style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                                <div style={{ 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    marginRight: '10px' 
+                                }}></div>
+                                <Typography style={{ flexGrow: 1 }}>{calendar.name}</Typography>
+                                <Button 
+                                    variant="outlined" 
+                                    onClick={() => props.onCalendarChange(calendar.id)}
+                                    disabled={calendar.id === currentCalendarId}
+                                >
+                                    Select
+                                </Button>
+                                <Button 
+                                    variant="outlined" 
+                                    onClick={() => {
+                                        setSelectedCalendar(calendar);
+                                        setEditMode(true);
+                                    }}
+                                >
+                                    Edit
+                                </Button>
+                                <Button 
+                                    variant="outlined" 
+                                    color="error"
+                                    onClick={() => handleDeleteCalendar(calendar.id)}
+                                    disabled={calendar.main === true}
+                                    title={calendar.main ? "Main calendar cannot be deleted" : "Delete calendar"}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        ))
+                    )}
 
                     {/* Add new calendar section */}
                     <Box sx={{ mt: 3, p: 2, border: '1px solid #ccc', borderRadius: 1 }}>

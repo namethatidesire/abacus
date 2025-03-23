@@ -108,6 +108,13 @@ async function updateCalendar(data) {
 async function deleteCalendar(data) {
     try {
         const { calendarId } = data;
+
+        await prisma.event.deleteMany({
+            where: {
+                calendarId: calendarId
+            }
+        });
+
         const calendar = await prisma.calendar.delete({
             where: {
                 id: calendarId,

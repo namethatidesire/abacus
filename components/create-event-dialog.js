@@ -72,6 +72,11 @@ export default function CreateEventDialog(props) {
         } catch (error) {
             console.error('Error creating event:', error);
         }
+
+        setEventColor('#FF0000');
+        setEventTitle('');
+        setEventDateTime(dayjs());
+        
         props.callback();
         handleClose();
     }
