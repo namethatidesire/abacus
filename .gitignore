@@ -42,5 +42,5 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/dev.db
-/prisma/migrations/*
+prisma/dev.db
+prisma/migrations/
