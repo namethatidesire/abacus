@@ -14,7 +14,15 @@ export async function POST(request) {
         recurring,
         color,
         type,
-        tags,
+        tags: {
+          connectOrCreate: tags.map(tag => ({
+            where: { name: tag.name || tag },
+            create: {
+              name: tag.name || tag,
+              color: tag.color || '#FF0000'
+            }
+          }))
+        },
         description,
         endDate,
         reminder

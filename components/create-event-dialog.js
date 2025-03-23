@@ -14,6 +14,7 @@ import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { Description } from "@mui/icons-material";
+import Tags from "./tags";
 
 // @param props: accountId, callback
 // accountId: the id of the user creating the event
@@ -27,6 +28,7 @@ export default function CreateEventDialog(props) {
     const [eventDescription, setEventDescription] = React.useState('');
     const [eventRecurring, setEventRecurring] = React.useState('None');
     const [eventReminder, setEventReminder] = React.useState('None');
+    const [eventTags, setEventTags] = React.useState([]);
 
     const accountId = props.accountId;
 
@@ -37,6 +39,22 @@ export default function CreateEventDialog(props) {
     const handleClose = () => {
         setOpen(false);
     };
+
+    const handleTagsChange = (tags) => {
+        let realTags = [];
+        for (let tag of tags) {
+            if (typeof tag === "string") {
+                let newTag = {
+                    name: tag,
+                    color: "#FF0000",
+                }
+                realTags.push(newTag);
+            } else {
+                realTags.push(tag);
+            }
+        }
+        setEventTags(realTags);
+    }
 
     // Function to create an event
     const createEvent = async function() {
@@ -53,7 +71,8 @@ export default function CreateEventDialog(props) {
             description: eventDescription,
             endDate: eventEndDateTime.toISOString(),
             type: "EVENT",
-            reminder: eventReminder
+            reminder: eventReminder,
+            tags: eventTags,
         };
 
         try {
@@ -155,6 +174,7 @@ export default function CreateEventDialog(props) {
                             <MenuItem value="1 week">1 week</MenuItem>
                         </Select>
                     </FormControl>
+                    <Tags value={eventTags} onChange={handleTagsChange} />
                 </div>
             </DialogContent>
             <DialogActions>

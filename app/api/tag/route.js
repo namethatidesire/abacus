@@ -45,3 +45,16 @@ export async function POST(request) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const tags = await prisma.tag.findMany();
+    return NextResponse.json(tags);
+  } catch (e) {
+    console.log(e);
+    return NextResponse.json(
+      { error: 'Failed to fetch tags', details: e.message },
+      { status: 500 }
+    );
+  }
+}
