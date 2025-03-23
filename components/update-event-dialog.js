@@ -1,23 +1,25 @@
+// update-event-dialog.js
 import React from "react";
 import dayjs from "dayjs";
-import { Button } from "@mui/material";
 import { BaseEventDialog } from "./base-event-dialog";
+import { Button } from "@mui/material";
 
-export default function CreateEventDialog({ accountId, callback }) {
+export default function UpdateEventDialog({ event, accountId, callback }) {
     const [open, setOpen] = React.useState(false);
     const [eventData, setEventData] = React.useState({
-        title: '',
-        color: '#FF0000',
-        startDateTime: dayjs(),
-        endDateTime: dayjs(),
-        description: '',
-        recurring: 'None',
-        reminder: 'None',
-        tags: []
+        title: event.title,
+        color: event.color,
+        startDateTime: dayjs(event.date + event.time),
+        endDateTime: dayjs(event.endDate),
+        description: event.description,
+        recurring: event.recurring,
+        reminder: event.reminder || 'None',
+        tags: event.tags
     });
 
-    const createEvent = async () => {
-        const newEvent = {
+    const updateEvent = async () => {
+        const updatedEvent = {
+            id: event.id,
             userId: accountId,
             title: eventData.title,
             date: eventData.startDateTime.toISOString(),
@@ -33,16 +35,16 @@ export default function CreateEventDialog({ accountId, callback }) {
 
         try {
             const response = await fetch(`api/event/${accountId}`, {
-                method: 'POST',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newEvent),
+                body: JSON.stringify(updatedEvent),
             });
 
             if (!response.ok) {
-                console.error('Failed to create event');
+                console.error('Failed to update event');
             }
         } catch (error) {
-            console.error('Error creating event:', error);
+            console.error('Error updating event:', error);
         }
         callback();
         setOpen(false);
@@ -50,17 +52,15 @@ export default function CreateEventDialog({ accountId, callback }) {
 
     return (
         <React.Fragment>
-            <Button variant="outlined" onClick={() => setOpen(true)}>
-                Create New Event
-            </Button>
+            <Button variant="outlined" onClick={() => setOpen(true)}>Edit</Button>
             <BaseEventDialog
                 open={open}
                 onClose={() => setOpen(false)}
-                title="Create New Event"
+                title="Update Event"
                 eventData={eventData}
                 setEventData={setEventData}
-                onSubmit={createEvent}
-                submitButtonText="Create Event"
+                onSubmit={updateEvent}
+                submitButtonText="Update Event"
             />
         </React.Fragment>
     );

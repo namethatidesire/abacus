@@ -75,7 +75,7 @@ function CalendarDays(props) {
                                 className="event" 
                                 style={{ backgroundColor: event.color }}
                             >
-                                <ShowEventDialog event={event}>
+                                <ShowEventDialog event={event} accountId={props.accountId} updateCallback={props.updateCallback}>
                                     {event.title}
                                 </ShowEventDialog>
                             </div>
