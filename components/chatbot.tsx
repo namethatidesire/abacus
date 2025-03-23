@@ -538,6 +538,13 @@ const ChatBot = () => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
+
+    // Refresh events data before processing the query
+    const freshEvents = await fetchUserEvents(userId);
+    if (freshEvents) {
+      setEvents(freshEvents);
+      buildEventMap(freshEvents);
+    }
     
     // Simulate bot typing
     setIsTyping(true);

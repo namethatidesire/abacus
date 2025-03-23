@@ -311,6 +311,8 @@ export default class Calendar extends Component {
                             <WeeklyView 
                                 currentDay={currentDay}
                                 events={events}
+                                accountId={this.state.accountId}
+                                updateCallback={this.updateEvents}
                             />
                         )}
                     </div>

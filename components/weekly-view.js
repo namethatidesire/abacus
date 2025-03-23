@@ -3,7 +3,7 @@ import React from 'react';
 import { Typography } from "@mui/material";
 import ShowEventDialog from "./show-event-dialog";
 
-function WeeklyView({ currentDay, events }) {
+function WeeklyView({ currentDay, events, accountId, updateCallback }) {
     // Get the start of the week (Sunday)
     const getWeekStart = (date) => {
         const start = new Date(date);
@@ -49,6 +49,8 @@ function WeeklyView({ currentDay, events }) {
                                     <ShowEventDialog 
                                         key={eventIndex} 
                                         event={event}
+                                        accountId={accountId}
+                                        updateCallback={updateCallback}
                                     >
                                         <div
                                             className="week-event"
