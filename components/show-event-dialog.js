@@ -13,8 +13,17 @@ import {
 import dayjs from "dayjs";
 import UpdateEventDialog from "@/components/update-event-dialog";
 
-export default function ShowEventDialog({event, accountId, updateCallback, children}) {
+export default function ShowEventDialog({
+    event, 
+    accountId, 
+    updateCallback, 
+    children, 
+    hasConflict, 
+    conflictingEvents,
+    onAcknowledgeConflict
+}) {
     const [open, setOpen] = React.useState(false);
+
     const handleClickOpen = () => {
         setOpen(true);
     };
@@ -23,22 +32,54 @@ export default function ShowEventDialog({event, accountId, updateCallback, child
         setOpen(false);
     };
 
-    return <React.Fragment>
-        <div onClick={handleClickOpen}>
-            {children}
-        </div>
-        <Dialog open={open} onClose={handleClose}>
-            <DialogTitle>
-                {event.title}
-                <UpdateEventDialog accountId={accountId} event={event} callback={updateCallback} />
-            </DialogTitle>
-            <DialogContent>
-                <Typography>{dayjs(event.date + event.time).format('dddd, MMM. D, YYYY h:mm A')}</Typography>
-                {event.endDate !== null ? <Typography>{"to " + dayjs(event.endDate).format('dddd, MMM. D, YYYY h:mm A') }</Typography> : ""}
-                {/*event.recurring !== "None" ? <Typography>Repeats {event.recurring.toLowerCase()}</Typography> : ""*/}
-                {event.reminder !== "None" ? <Typography>Reminder {event.reminder} before</Typography> : ""}
-                {event.description ? <Typography>Description: {event.description}</Typography> : ""}
-            </DialogContent>
-        </Dialog>
-    </React.Fragment>
+    const handleAcknowledgeConflict = () => {
+        onAcknowledgeConflict();
+        // Don't close the dialog
+    };
+
+    return (
+        <React.Fragment>
+            <div onClick={handleClickOpen}>
+                {children}
+            </div>
+            <Dialog open={open} onClose={handleClose}>
+                <DialogTitle>
+                    {event.title}
+                    <UpdateEventDialog accountId={accountId} event={event} callback={updateCallback} />
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>{dayjs(event.date + event.time).format('dddd, MMM. D, YYYY h:mm A')}</Typography>
+                    {event.endDate !== null && 
+                        <Typography>{"to " + dayjs(event.endDate).format('dddd, MMM. D, YYYY h:mm A')}</Typography>}
+                    {event.description && <Typography>Description: {event.description}</Typography>}
+                    
+                    {/* Add conflict warning and acknowledgment */}
+                    {hasConflict && (
+                        <>
+                            <DialogContentText sx={{ color: 'error.main', mt: 2 }}>
+                                <Typography variant="subtitle1" color="error">
+                                    ⚠️ This event conflicts with:
+                                </Typography>
+                                {conflictingEvents.map((conflictEvent, index) => (
+                                    <Typography key={index} variant="body2" sx={{ ml: 2 }}>
+                                        • {conflictEvent.title} ({conflictEvent.time})
+                                    </Typography>
+                                ))}
+                            </DialogContentText>
+                            <Button 
+                                onClick={handleAcknowledgeConflict}
+                                color="warning"
+                                sx={{ mt: 1 }}
+                            >
+                                Acknowledge Conflicts
+                            </Button>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose}>Close</Button>
+                </DialogActions>
+            </Dialog>
+        </React.Fragment>
+    );
 }

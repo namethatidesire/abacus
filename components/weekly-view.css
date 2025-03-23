@@ -10,7 +10,7 @@
 
 .weekly-header {
     display: grid;
-    grid-template-columns: 60px repeat(7, 1fr);
+    grid-template-columns: 90px repeat(7, 1fr);
     border-bottom: 1px solid #E5E5E5;
     background: white;
     position: sticky;
@@ -19,7 +19,7 @@
 }
 
 .time-header {
-    width: 60px;
+    width: 90px;
     border-right: 1px solid #E5E5E5;
 }
 
@@ -38,6 +38,11 @@
     font-weight: 600;
 }
 
+.day-header.today .MuiTypography-subtitle1 {
+    color: #8CA7D6;
+    font-weight: 600;
+}
+
 .weekly-content {
     display: flex;
     overflow-y: auto;
@@ -45,7 +50,7 @@
 }
 
 .time-column {
-    width: 60px;
+    width: 90px;
     flex-shrink: 0;
     border-right: 1px solid #E5E5E5;
     background: white;
@@ -79,6 +84,11 @@
 .time-grid-line {
     height: 60px;
     border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.time-grid-line:hover {
+    background-color: rgba(140, 167, 214, 0.1);
 }
 
 .week-event {

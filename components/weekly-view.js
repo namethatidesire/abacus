@@ -1,14 +1,40 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { Typography } from "@mui/material";
 import ShowEventDialog from "./show-event-dialog";
+import CreateEventDialog from "./create-event-dialog";
 import './weekly-view.css';
 
 function WeeklyView({ currentDay, events, accountId, updateCallback }) {
-    // Generate time slots for 24 hours
+    // Add state for acknowledged conflicts
+    const [acknowledgedConflicts, setAcknowledgedConflicts] = useState(new Set());
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [selectedDateTime, setSelectedDateTime] = useState(null);
+
+    // Add conflict acknowledgment handler
+    const handleConflictAcknowledge = (eventId, overlappingEvents) => {
+        const updatedAcknowledged = new Set(acknowledgedConflicts);
+        overlappingEvents.forEach(otherId => {
+            updatedAcknowledged.add(`${eventId}-${otherId}`);
+            updatedAcknowledged.add(`${otherId}-${eventId}`);
+        });
+        setAcknowledgedConflicts(updatedAcknowledged);
+    };
+
+    // Add this function to handle time slot clicks
+    const handleTimeSlotClick = (day, hour) => {
+        const dateTime = new Date(day);
+        dateTime.setHours(hour);
+        dateTime.setMinutes(0);
+        setSelectedDateTime(dateTime);
+        setShowCreateDialog(true);
+    };
+
+    // Replace the timeSlots array definition
     const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = i.toString().padStart(2, '0');
-        return `${hour}:00`;
+        const hour = i === 0 ? 12 : i > 12 ? i - 12 : i;
+        const period = i < 12 ? 'AM' : 'PM';
+        return `${hour}:00 ${period}`;
     });
 
     // Get the start of the week (Sunday)
@@ -79,7 +105,7 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
         return start1 < end2 && end1 > start2;
     };
 
-    // Update the getEventStyle function
+    // Modify getEventStyle to consider acknowledged conflicts
     const getEventStyle = (event, overlaps) => {
         const [hours, minutes] = event.time.split(':').map(Number);
         const topPosition = (hours + minutes / 60) * 60;
@@ -95,6 +121,10 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
         const stackOffset = overlap?.stackIndex || 0;
         const offsetPerStack = 28; // Pixels to offset each stacked event
 
+        const hasUnacknowledgedConflict = overlap?.overlappingWith.some(otherId => 
+            !acknowledgedConflicts.has(`${event.id}-${otherId}`)
+        );
+
         return {
             position: 'absolute',
             top: `${topPosition + (stackOffset * offsetPerStack)}px`,
@@ -104,9 +134,20 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
             left: '2.5%',
             zIndex: overlap?.stackIndex + 1,
             opacity: 0.9, // Add slight transparency
-            border: overlap?.overlappingWith.length > 0 ? '2px solid #ff0000' : 'none',
-            boxShadow: overlap?.overlappingWith.length > 0 ? '0 0 4px rgba(255, 0, 0, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)'
+            border: hasUnacknowledgedConflict ? '2px solid #ff0000' : 
+                   overlap?.overlappingWith.length > 0 ? '2px solid #FFA500' : 'none',
+            boxShadow: hasUnacknowledgedConflict ? '0 0 4px rgba(255, 0, 0, 0.4)' : 
+                      overlap?.overlappingWith.length > 0 ? '0 0 4px rgba(255, 165, 0, 0.4)' : 
+                      '0 2px 4px rgba(0,0,0,0.1)'
         };
+    };
+
+    // Convert time to 12-hour format
+    const formatTime = (time) => {
+        const [hours, minutes] = time.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
 
     const weekStart = getWeekStart(currentDay);
@@ -124,7 +165,7 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
                             <Typography variant="subtitle2">
                                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
                             </Typography>
-                            <Typography variant="h6">
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                 {day.getDate()}
                             </Typography>
                         </div>
@@ -154,34 +195,61 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
                             <div key={dayIndex} className="day-column">
                                 {/* Time grid lines */}
                                 {timeSlots.map((time, timeIndex) => (
-                                    <div key={timeIndex} className="time-grid-line" />
+                                    <div 
+                                        key={timeIndex} 
+                                        className="time-grid-line"
+                                        onClick={() => handleTimeSlotClick(day, timeIndex)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
                                 ))}
 
                                 {/* Events */}
-                                {dayEvents.map((event, eventIndex) => (
-                                    <ShowEventDialog
-                                        key={eventIndex}
-                                        event={event}
-                                        accountId={accountId}
-                                        updateCallback={updateCallback}
-                                    >
-                                        <div
-                                            className="week-event"
-                                            style={getEventStyle(event, overlaps)}
+                                {dayEvents.map((event, eventIndex) => {
+                                    const overlap = overlaps.get(event.id);
+                                    const hasUnacknowledgedConflict = overlap?.overlappingWith.some(otherId => 
+                                        !acknowledgedConflicts.has(`${event.id}-${otherId}`)
+                                    );
+                                    const conflictingEvents = overlap?.overlappingWith.map(id => 
+                                        dayEvents.find(e => e.id === id)
+                                    ).filter(Boolean) || [];
+
+                                    return (
+                                        <ShowEventDialog
+                                            key={eventIndex}
+                                            event={event}
+                                            accountId={accountId}
+                                            updateCallback={updateCallback}
+                                            hasConflict={hasUnacknowledgedConflict}
+                                            conflictingEvents={conflictingEvents}
+                                            onAcknowledgeConflict={() => handleConflictAcknowledge(event.id, overlap?.overlappingWith || [])}
                                         >
-                                            <div className="event-title">{event.title}</div>
-                                            <div className="event-time">{event.time}</div>
-                                            {overlaps.get(event.id)?.overlappingWith.length > 0 && (
-                                                <span className="conflict-indicator">⚠️</span>
-                                            )}
-                                        </div>
-                                    </ShowEventDialog>
-                                ))}
+                                            <div
+                                                className="week-event"
+                                                style={getEventStyle(event, overlaps)}
+                                            >
+                                                <div className="event-title">{event.title}</div>
+                                                <div className="event-time">{formatTime(event.time)}</div>
+                                                {hasUnacknowledgedConflict && (
+                                                    <span className="conflict-indicator">⚠️</span>
+                                                )}
+                                            </div>
+                                        </ShowEventDialog>
+                                    );
+                                })}
                             </div>
                         );
                     })}
                 </div>
             </div>
+
+            {/* Add CreateEventDialog */}
+            <CreateEventDialog
+                accountId={accountId}
+                callback={updateCallback}
+                open={showCreateDialog}
+                onClose={() => setShowCreateDialog(false)}
+                selectedDate={selectedDateTime}
+            />
         </div>
     );
 }
