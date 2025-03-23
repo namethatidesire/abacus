@@ -2,24 +2,33 @@ import { prisma } from "@/utils/db";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
-    const { accountId, query } = await request.json();
-    console.log(accountId, query);
+    const data = await request.json();
+    const { accountId, query } = data;
+
+    // Fetching
     if (query === "all") {
         return getAllCalendars(accountId);
     } else if (query === "default") {
         return getDefaultCalendar(accountId);
+    } else if (query === "create") {
+        return createCalendar(data);
+    } else if (query === "update") {
+        return updateCalendar(data);
+    } else if (query === "delete") {
+        return deleteCalendar(data);
     }
+
     return NextResponse.json({ message: "Invalid query" }, { status: 400 });
 }
 
 // Get user's calendars
-async function getAllCalendars(userId) {
+async function getAllCalendars(accountId) {
     try {
         const calendars = await prisma.calendar.findMany({
             where: {
                 users: {
                     some: {
-                        id: userId
+                        id: accountId
                     }
                 },
             },
@@ -45,6 +54,69 @@ async function getDefaultCalendar(accountId) {
             }
         });
         return NextResponse.json(defaultCalendar, { status: 200 });
+    } catch (error) {
+        console.error(error.stack);
+        return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    }
+}
+
+async function createCalendar(data) {
+    try {
+        const { accountId, name, description } = data;
+        const calendar = await prisma.calendar.create({
+            data: {
+                ownerId: accountId,
+                name,
+                description,
+                users: {
+                    connect: [
+                    {
+                        id: accountId,
+                    },
+                    ],
+                },
+            },
+        });
+
+        return NextResponse.json({ calendar }, { status: 201 });
+    } catch (error) {
+        console.error(error.stack);
+        return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    }
+}
+
+async function updateCalendar(data) {
+    try {
+        const { calendarId, name, description } = data;
+        const calendar = await prisma.calendar.update({
+            where: {
+                id: calendarId
+            },
+            data: {
+                name,
+                description
+            }
+        });
+
+        return NextResponse.json({ calendar }, { status: 200 });
+    } catch (error) {
+        console.error(error.stack);
+        return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    }
+}
+
+async function deleteCalendar(data) {
+    try {
+        const { calendarId } = data;
+        const calendar = await prisma.calendar.delete({
+            where: {
+                id: calendarId,
+                main: false,
+                shared: false
+            }
+        });
+
+        return NextResponse.json({ calendar }, { status: 200 });
     } catch (error) {
         console.error(error.stack);
         return NextResponse.json({ message: "An error occurred" }, { status: 500 });

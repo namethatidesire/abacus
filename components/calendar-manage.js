@@ -20,9 +20,10 @@ export default function ManageCalendarDialog(props) {
     const [open, setOpen] = useState(false);
     const [calendars, setCalendars] = useState([]);
     const [newCalendarName, setNewCalendarName] = useState('');
-    const [newCalendarColor, setNewCalendarColor] = useState('#2196f3');
+	const [newCalendarDesc, setNewCalendarDesc] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [selectedCalendar, setSelectedCalendar] = useState(null);
+
 
     const accountId = props.accountId;
     const currentCalendarId = props.calendarId;
@@ -64,10 +65,10 @@ export default function ManageCalendarDialog(props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId: accountId,
+                accountId: accountId,
                 query: "create",
                 name: newCalendarName,
-                color: newCalendarColor
+				description: newCalendarDesc
             })
         });
         const result = await response.json();
@@ -89,7 +90,7 @@ export default function ManageCalendarDialog(props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId: accountId,
+                accountId: accountId,
                 query: "delete",
                 calendarId: calendarId
             })
@@ -105,11 +106,11 @@ export default function ManageCalendarDialog(props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId: accountId,
+                accountId: accountId,
                 query: "update",
                 calendarId: calendarId,
                 name: selectedCalendar.name,
-                color: selectedCalendar.color
+                description: selectedCalendar.description
             })
         });
         const result = await response.json();
@@ -125,7 +126,7 @@ export default function ManageCalendarDialog(props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId: accountId,
+                accountId: accountId,
                 query: "share",
                 calendarId: calendarId,
                 shareWith: shareEmail
@@ -152,7 +153,6 @@ export default function ManageCalendarDialog(props) {
                             <div style={{ 
                                 width: '20px', 
                                 height: '20px', 
-                                backgroundColor: calendar.color, 
                                 marginRight: '10px' 
                             }}></div>
                             <Typography style={{ flexGrow: 1 }}>{calendar.name}</Typography>
@@ -189,14 +189,17 @@ export default function ManageCalendarDialog(props) {
                         <Typography variant="h6">Add New Calendar</Typography>
                         <TextField
                             fullWidth
-                            label="Calendar Name"
+                            label="Name"
                             value={newCalendarName}
                             onChange={(e) => setNewCalendarName(e.target.value)}
                             margin="normal"
                         />
-                        <CirclePicker
-                            color={newCalendarColor}
-                            onChangeComplete={(color) => setNewCalendarColor(color.hex)}
+						<TextField
+                            fullWidth
+                            label="Description"
+                            value={newCalendarDesc}
+                            onChange={(e) => setNewCalendarDesc(e.target.value)}
+                            margin="normal"
                         />
                         <Button 
                             variant="contained" 
@@ -221,14 +224,17 @@ export default function ManageCalendarDialog(props) {
                 <DialogContent>
                     <TextField
                         fullWidth
-                        label="Calendar Name"
+                        label="Name"
                         value={selectedCalendar?.name || ''}
                         onChange={(e) => setSelectedCalendar({...selectedCalendar, name: e.target.value})}
                         margin="normal"
                     />
-                    <CirclePicker
-                        color={selectedCalendar?.color}
-                        onChangeComplete={(color) => setSelectedCalendar({...selectedCalendar, color: color.hex})}
+					<TextField
+                        fullWidth
+                        label="Description"
+                        value={selectedCalendar?.description || ''}
+                        onChange={(e) => setSelectedCalendar({...selectedCalendar, description: e.target.value})}
+                        margin="normal"
                     />
                     <TextField
                         fullWidth
