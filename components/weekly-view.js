@@ -30,25 +30,82 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
         return days;
     };
 
-    // Calculate event position and dimensions
-    const getEventStyle = (event) => {
-        const [hours, minutes] = event.time.split(':').map(Number);
-        const topPosition = (hours + minutes / 60) * 60; // 60px per hour
+    // Update the getOverlappingEvents function
+    const getOverlappingEvents = (events) => {
+        const sortedEvents = [...events].sort((a, b) => {
+            const timeA = a.time.split(':').map(Number);
+            const timeB = b.time.split(':').map(Number);
+            return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+        });
+
+        const overlaps = new Map();
         
-        // Calculate duration
-        let duration = 60; // Default 1 hour = 60px
+        sortedEvents.forEach((event, index) => {
+            if (!overlaps.has(event.id)) {
+                overlaps.set(event.id, { 
+                    count: 1, 
+                    position: 0, 
+                    overlappingWith: [],
+                    stackIndex: 0 // Add stackIndex for vertical positioning
+                });
+            }
+
+            // Check overlap with previous events to determine stack position
+            for (let i = 0; i < index; i++) {
+                const other = sortedEvents[i];
+                if (checkEventOverlap(event, other)) {
+                    const eventOverlap = overlaps.get(event.id);
+                    const otherOverlap = overlaps.get(other.id);
+                    
+                    // Stack the current event below the overlapping event
+                    eventOverlap.stackIndex = otherOverlap.stackIndex + 1;
+                    eventOverlap.overlappingWith.push(other.id);
+                    otherOverlap.overlappingWith.push(event.id);
+                }
+            }
+        });
+
+        return overlaps;
+    };
+
+    // Add event overlap check
+    const checkEventOverlap = (event1, event2) => {
+        const start1 = new Date(`${event1.date}T${event1.time}`);
+        const end1 = event1.endDate ? new Date(event1.endDate) : new Date(start1.getTime() + 60 * 60 * 1000);
+        
+        const start2 = new Date(`${event2.date}T${event2.time}`);
+        const end2 = event2.endDate ? new Date(event2.endDate) : new Date(start2.getTime() + 60 * 60 * 1000);
+
+        return start1 < end2 && end1 > start2;
+    };
+
+    // Update the getEventStyle function
+    const getEventStyle = (event, overlaps) => {
+        const [hours, minutes] = event.time.split(':').map(Number);
+        const topPosition = (hours + minutes / 60) * 60;
+        
+        let duration = 60;
         if (event.endDate) {
             const start = new Date(`${event.date}T${event.time}`);
             const end = new Date(event.endDate);
-            duration = (end - start) / (1000 * 60 * 60) * 60; // Convert hours to pixels
+            duration = (end - start) / (1000 * 60 * 60) * 60;
         }
 
+        const overlap = overlaps.get(event.id);
+        const stackOffset = overlap?.stackIndex || 0;
+        const offsetPerStack = 28; // Pixels to offset each stacked event
+
         return {
-            top: `${topPosition}px`,
+            position: 'absolute',
+            top: `${topPosition + (stackOffset * offsetPerStack)}px`,
             height: `${duration}px`,
             backgroundColor: event.color,
-            width: 'calc(100% - 8px)',
-            left: '4px',
+            width: '95%',
+            left: '2.5%',
+            zIndex: overlap?.stackIndex + 1,
+            opacity: 0.9, // Add slight transparency
+            border: overlap?.overlappingWith.length > 0 ? '2px solid #ff0000' : 'none',
+            boxShadow: overlap?.overlappingWith.length > 0 ? '0 0 4px rgba(255, 0, 0, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)'
         };
     };
 
@@ -88,16 +145,20 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
 
                 {/* Days grid */}
                 <div className="days-grid">
-                    {weekDays.map((day, dayIndex) => (
-                        <div key={dayIndex} className="day-column">
-                            {/* Time grid lines */}
-                            {timeSlots.map((time, timeIndex) => (
-                                <div key={timeIndex} className="time-grid-line" />
-                            ))}
+                    {weekDays.map((day, dayIndex) => {
+                        const dayEvents = Array.isArray(events[day.toDateString()]) ? 
+                            events[day.toDateString()] : [];
+                        const overlaps = getOverlappingEvents(dayEvents);
 
-                            {/* Events */}
-                            {Array.isArray(events[day.toDateString()]) && 
-                                events[day.toDateString()].map((event, eventIndex) => (
+                        return (
+                            <div key={dayIndex} className="day-column">
+                                {/* Time grid lines */}
+                                {timeSlots.map((time, timeIndex) => (
+                                    <div key={timeIndex} className="time-grid-line" />
+                                ))}
+
+                                {/* Events */}
+                                {dayEvents.map((event, eventIndex) => (
                                     <ShowEventDialog
                                         key={eventIndex}
                                         event={event}
@@ -106,16 +167,19 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
                                     >
                                         <div
                                             className="week-event"
-                                            style={getEventStyle(event)}
+                                            style={getEventStyle(event, overlaps)}
                                         >
                                             <div className="event-title">{event.title}</div>
                                             <div className="event-time">{event.time}</div>
+                                            {overlaps.get(event.id)?.overlappingWith.length > 0 && (
+                                                <span className="conflict-indicator">⚠️</span>
+                                            )}
                                         </div>
                                     </ShowEventDialog>
-                                ))
-                            }
-                        </div>
-                    ))}
+                                ))}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
