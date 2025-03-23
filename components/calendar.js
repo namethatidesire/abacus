@@ -28,7 +28,8 @@ export default class Calendar extends Component {
             currentDay: new Date(),
             events: {},
             accountId: null,
-            view: 'month' // 'month' or 'week'
+            view: 'month', // 'month' or 'week'
+            highlightedEventId: null
         }
     }
 
@@ -39,6 +40,9 @@ export default class Calendar extends Component {
             // Redirect to login page Session expired
             window.location.href = '/login';
         }
+
+        // Add event listener for highlighting events from chat
+        document.addEventListener('highlightCalendarEvent', this.handleHighlightEvent);
 
         try {
             const response = await fetch(`api/account/authorize`, {
@@ -63,6 +67,21 @@ export default class Calendar extends Component {
             // Redirect to login page Session expired  
             window.location.href = '/login';
         }
+    }
+
+    componentWillUnmount() {
+        // Remove event listener when component unmounts
+        document.removeEventListener('highlightCalendarEvent', this.handleHighlightEvent);
+    }
+
+    // Handle highlight event from chat
+    handleHighlightEvent = (e) => {
+        const { eventId, highlight } = e.detail;
+        
+        // Set highlighted event ID in state
+        this.setState({ 
+            highlightedEventId: highlight ? eventId : null 
+        });
     }
 
     fetchEvents = async () => {
@@ -156,7 +175,7 @@ export default class Calendar extends Component {
         const { view, currentDay, events } = this.state;
         
         return (
-            <div>
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Navbar />
 
                 <div className="calendar">
@@ -219,10 +238,11 @@ export default class Calendar extends Component {
                                     ))}
                                 </div>
                                 <CalendarDays 
-                                    day={currentDay} 
-                                    changeCurrentDay={this.changeCurrentDay} 
-                                    createEvent={this.createEvent} 
-                                    events={events} 
+                                day={currentDay} 
+                                changeCurrentDay={this.changeCurrentDay} 
+                                createEvent={this.createEvent} 
+                                events={events}
+                                highlightedEventId={this.state.highlightedEventId} 
                                 />
                             </>
                         ) : (

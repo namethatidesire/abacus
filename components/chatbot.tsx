@@ -33,7 +33,7 @@ const typingDotStyle = {
 };
 
 const ChatBot = () => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Hi there! I'm your schedule assistant. Ask me about your schedule or for help managing your time.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -41,14 +41,35 @@ const ChatBot = () => {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState({});
+  const [eventMap, setEventMap] = useState(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Interface definitions
+  interface MessagePart {
+    text: string;
+    isHighlighted: boolean;
+    color?: string;
+    eventId?: string;
+    date?: string;
+    time?: string;
+  }
+
   interface Message {
     text: string;
     sender: "user" | "bot";
     id: number;
+    parts?: MessagePart[];
+  }
+
+  interface Event {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    location?: string;
+    description?: string;
+    color?: string;
   }
 
   // Initialize with user authentication and fetch events
@@ -104,6 +125,7 @@ const ChatBot = () => {
             const eventsData = await fetchUserEvents(userIdFromAuth);
             if (eventsData) {
               setEvents(eventsData);
+              buildEventMap(eventsData);
             }
           }
           
@@ -123,6 +145,42 @@ const ChatBot = () => {
 
     initializeAssistant();
   }, []);
+
+  // Build a map of event titles to event data for easy lookup
+  const buildEventMap = (eventsData: { [dateKey: string]: Event[] }) => {
+    const map = new Map();
+    
+    Object.values(eventsData).forEach(dateEvents => {
+      dateEvents.forEach(event => {
+        // Use lowercase title as key for case-insensitive matching
+        map.set(event.title.toLowerCase(), {
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          color: event.color || getRandomEventColor(event.title)
+        });
+      });
+    });
+    
+    setEventMap(map);
+  };
+  
+  // Generate a consistent color for events that don't have a color
+  const getRandomEventColor = (title: string) => {
+    // Generate a color based on the event title (for consistency)
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+      hash = title.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Use pastel colors (lighter and less saturated)
+    const h = hash % 360;
+    const s = 60 + (hash % 20); // 60-80% saturation
+    const l = 65 + (hash % 15); // 65-80% lightness
+    
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  };
 
   // Fetch user events
   const fetchUserEvents = async (userIdToUse = null) => {
@@ -218,11 +276,15 @@ const ChatBot = () => {
             Keep responses conversational and focused on schedule management.
             
             Be concise and provide relevant information. Avoid repeating the user's question.
+            
+            IMPORTANT: When you mention an event in your response, always use the EXACT title of the event 
+            as it appears in the schedule information. This ensures the UI can recognize and highlight these events.
+            
             If they ask about specific dates or times, refer to the schedule information provided.
             If they ask about creating or modifying events, suggest they use the calendar interface.
             If they ask for schedule analysis, provide insights based on their event distribution.
             
-            Format dates and times in a new paragraph line by line for clarity.
+            Format dates and times as follows: "Monday Jan. 1 at 9:00 AM".
             
             If their question is unclear or not about their schedule, ask clarifying questions.
           `,
@@ -295,7 +357,9 @@ const ChatBot = () => {
         
         sortedEvents.forEach(event => {
           if (eventCount >= maxEvents) return;
-          summary += `- ${event.time}: ${event.title} (${event.location || 'No location'})`;
+          // Add color information to help Claude understand which events to highlight
+          const colorInfo = event.color ? ` [color: ${event.color}]` : '';
+          summary += `- ${event.time}: ${event.title}${colorInfo} (${event.location || 'No location'})`;
           if (event.description) {
             summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
           }
@@ -306,6 +370,64 @@ const ChatBot = () => {
     });
     
     return summary;
+  };
+
+  // Highlight event titles in message text
+  const highlightEvents = (text: string): MessagePart[] => {
+    if (!text || eventMap.size === 0) return [{ text, isHighlighted: false }];
+    
+    // Create a regex pattern that matches event titles
+    // Sort titles by length (descending) to match longer titles first
+    const eventTitles = Array.from(eventMap.keys()).sort((a, b) => b.length - a.length);
+    
+    // Escape special regex characters in titles
+    const escapedTitles = eventTitles.map(title => 
+      title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    
+    // Create regex pattern with word boundaries for exact matches
+    const pattern = new RegExp(`\\b(${escapedTitles.join('|')})\\b`, 'gi');
+    
+    // Split text by matches to preserve formatting
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    const textToSearch = text;
+    while ((match = pattern.exec(textToSearch)) !== null) {
+      const matchedTitle = match[0];
+      const eventInfo = eventMap.get(matchedTitle.toLowerCase());
+      
+      // Add text before match
+      if (match.index > lastIndex) {
+        parts.push({
+          text: textToSearch.substring(lastIndex, match.index),
+          isHighlighted: false
+        });
+      }
+      
+      // Add highlighted match
+      parts.push({
+        text: matchedTitle,
+        isHighlighted: true,
+        color: eventInfo?.color || getRandomEventColor(matchedTitle),
+        eventId: eventInfo?.id,
+        date: eventInfo?.date,
+        time: eventInfo?.time
+      });
+      
+      lastIndex = match.index + matchedTitle.length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < textToSearch.length) {
+      parts.push({
+        text: textToSearch.substring(lastIndex),
+        isHighlighted: false
+      });
+    }
+    
+    return parts;
   };
 
   // Handle user message submission
@@ -321,10 +443,11 @@ const ChatBot = () => {
     }
     
     // Add user message
-    const userMessage = { 
+    const userMessage: Message = { 
       id: messages.length + 1, 
       text: inputValue, 
-      sender: "user" 
+      sender: "user" as const,
+      parts: undefined // Plain text for user messages
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -337,20 +460,22 @@ const ChatBot = () => {
       // Get response from Claude API
       const claudeResponse = await queryClaudeAPI(inputValue);
       
-      const botMessage = { 
+      const botMessage: Message = { 
         id: messages.length + 2, 
         text: claudeResponse, 
-        sender: "bot" 
+        sender: "bot" as const,
+        parts: highlightEvents(claudeResponse) // Highlighted text for bot responses
       };
       
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error getting response:', error);
       
-      const errorMessage = { 
+      const errorMessage: Message = { 
         id: messages.length + 2, 
         text: "Sorry, I encountered an error. Please try again later.", 
-        sender: "bot" 
+        sender: "bot",
+        parts: undefined // Plain text for error messages
       };
       
       setMessages(prev => [...prev, errorMessage]);
@@ -363,6 +488,103 @@ const ChatBot = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Helper function to determine text color based on background color
+  const getContrastColor = (bgColor: string) => {
+    // For HSL colors
+    if (bgColor.startsWith('hsl')) {
+      // Extract lightness value from HSL color
+      const match = bgColor.match(/hsl\(\s*\d+\s*,\s*\d+%\s*,\s*(\d+)%\s*\)/);
+      if (match && match[1]) {
+        const lightness = parseInt(match[1], 10);
+        return lightness > 65 ? '#000000' : '#ffffff';
+      }
+    }
+    
+    // For hex and other colors, use a simple algorithm
+    // Convert to hex if not already
+    let hex = bgColor;
+    if (bgColor.startsWith('rgb')) {
+      const rgbValues = bgColor.match(/\d+/g);
+      if (rgbValues && rgbValues.length >= 3) {
+        hex = `#${Number(rgbValues[0]).toString(16).padStart(2, '0')}${Number(rgbValues[1]).toString(16).padStart(2, '0')}${Number(rgbValues[2]).toString(16).padStart(2, '0')}`;
+      }
+    }
+    
+    // Default contrast color if format not recognized
+    if (!hex.startsWith('#')) return '#000000';
+    
+    // Calculate perceived brightness and return appropriate contrast color
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    return brightness > 125 ? '#000000' : '#ffffff';
+  };
+
+  const renderMessage = (message: { id?: number; text: any; sender?: string; parts?: any; }) => {
+    if (!message.parts) {
+      // Render plain text for messages without highlighting
+      // Add white-space: pre-wrap to preserve newlines
+      return <span style={{ whiteSpace: 'pre-wrap' }}>{message.text}</span>;
+    }
+    
+    // For messages with highlighted parts
+    return (
+      <>
+        {message.parts.map((part: MessagePart, index: React.Key | null | undefined) => {
+          if (!part.isHighlighted) {
+            // Add white-space: pre-wrap to preserve newlines in regular text
+            return <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part.text}</span>;
+          }
+          
+          // Highlighted event without tooltip
+          return (
+            <span
+              key={index}
+              className="relative"
+              onMouseEnter={() => {
+                // Dispatch custom event when hovering over an event in chat
+                const highlightEvent = new CustomEvent('highlightCalendarEvent', {
+                  detail: {
+                    eventId: part.eventId,
+                    highlight: true
+                  }
+                });
+                document.dispatchEvent(highlightEvent);
+              }}
+              onMouseLeave={() => {
+                // Remove highlight when mouse leaves
+                const unhighlightEvent = new CustomEvent('highlightCalendarEvent', {
+                  detail: {
+                    eventId: part.eventId,
+                    highlight: false
+                  }
+                });
+                document.dispatchEvent(unhighlightEvent);
+              }}
+            >
+              <span 
+                style={{ 
+                  backgroundColor: part.color || '#e0e0e0',
+                  padding: '1px 4px',
+                  borderRadius: '3px',
+                  color: getContrastColor(part.color || '#e0e0e0'),
+                  fontWeight: 500,
+                  whiteSpace: 'pre-wrap',
+                  cursor: 'pointer' // Add pointer cursor to indicate it's interactive
+                }}
+              >
+                {part.text}
+              </span>
+              {/* Tooltip removed */}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
 
   return (
     <div className="flex flex-col w-full h-full bg-white overflow-hidden">
@@ -397,7 +619,7 @@ const ChatBot = () => {
                   : "bg-gray-200 text-gray-800 rounded-bl-none"
               }`}
             >
-              {message.text}
+              {renderMessage(message)}
             </div>
           </div>
         ))}

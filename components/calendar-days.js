@@ -68,15 +68,31 @@ function CalendarDays(props) {
                         className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
                     >
                         <p>{day.number}</p>
-                        {dayEvents.map((event, eventIndex) => (
-                            <div 
-                                key={eventIndex} 
-                                className="event" 
-                                style={{ backgroundColor: event.color }}
-                            >
-                                {event.title}
-                            </div>
-                        ))}
+                        {dayEvents.map((event, eventIndex) => {
+                            // Check if this event is being highlighted from the chat
+                            const isHighlighted = props.highlightedEventId === event.id;
+                            
+                            return (
+                                <div 
+                                    key={eventIndex} 
+                                    className={`event${isHighlighted ? " highlighted-event" : ""}`}
+                                    style={{ 
+                                        backgroundColor: event.color,
+                                        // Add visual enhancements when highlighted
+                                        boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 'none',
+                                        transform: isHighlighted ? 'scale(1.05)' : 'none',
+                                        zIndex: isHighlighted ? 10 : 'auto',
+                                        transition: 'all 0.2s ease-in-out',
+                                        // Add white text color and matching font
+                                        color: 'white',
+                                        fontFamily: "'Crimson Pro', serif",
+                                        fontWeight: 400
+                                    }}
+                                >
+                                    {event.title}
+                                </div>
+                            );
+                        })}
                     </div>
                 );
             })}
