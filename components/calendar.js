@@ -9,6 +9,7 @@ import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
 import SearchFilterEventsDialog from "./searchFilterEvents";
+import ShowEventDialog from './show-event-dialog.js';
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -181,6 +182,25 @@ export default class Calendar extends Component {
         this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
     }
 
+    handleEventClick = (event) => {
+        if (event) {
+            // Show event details dialog for existing event
+            return (
+                <ShowEventDialog 
+                    event={event}
+                    accountId={this.state.accountId}
+                    updateCallback={this.updateEvents}
+                />
+            );
+        } else {
+            // Show create event dialog for empty space
+            this.setState({ 
+                showCreateDialog: true,
+                selectedDate: event?.date || this.state.currentDay
+            });
+        }
+    };
+
     render() {
         const { view, currentDay, events } = this.state;
         
@@ -284,6 +304,7 @@ export default class Calendar extends Component {
                                         showCreateDialog: true, 
                                         selectedDate: date
                                     })}
+                                    // onEventClick={this.handleEventClick}
                                 />
                             </>
                         ) : (

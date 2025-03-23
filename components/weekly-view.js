@@ -46,9 +46,11 @@ function WeeklyView({ currentDay, events }) {
                             </div>
                             <div className="day-events">
                                 {dayEvents.map((event, eventIndex) => (
-                                    <ShowEventDialog event={event}>
+                                    <ShowEventDialog 
+                                        key={eventIndex} 
+                                        event={event}
+                                    >
                                         <div
-                                            key={eventIndex}
                                             className="week-event"
                                             style={{ backgroundColor: event.color }}
                                         >

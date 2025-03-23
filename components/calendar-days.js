@@ -1,10 +1,10 @@
 "use client";
 import React from 'react';
-import ShowEventDialog from "./show-event-dialog";
 import { Crimson_Pro } from 'next/font/google';
 import { Typography } from "@mui/material";
 import './calendar-days.css';
 import CreateEventDialog from './create-event-dialog';
+import ShowEventDialog from './show-event-dialog';
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -80,11 +80,14 @@ function CalendarDays(props) {
                         key={index} 
                         className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
                         onClick={(e) => {
-                            e.stopPropagation(); // Prevent event bubbling
-                            props.changeCurrentDay(day);
-                            props.onCreateEvent(day.date);
+                            // Only handle empty space clicks
+                            if (e.target.classList.contains('calendar-day') || e.target.classList.contains('MuiTypography-root')) {
+                                e.stopPropagation();
+                                props.changeCurrentDay(day);
+                                props.onCreateEvent(day.date);
+                            }
                         }} 
-                        style={{ cursor: "pointer", textAlign: "right" }} // Make it look clickable and align to the right
+                        style={{ cursor: "pointer", textAlign: "right" }}
                     >
                         <Typography 
                             variant="body2" 
@@ -115,28 +118,33 @@ function CalendarDays(props) {
                             const isHighlighted = props.highlightedEventId === event.id;
                             
                             return (
-                                <div 
-                                    key={eventIndex} 
-                                    className={`event${isHighlighted ? " highlighted-event" : ""}`}
-                                    style={{ 
-                                        backgroundColor: event.color,
-                                        boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 'none',
-                                        transform: isHighlighted ? 'scale(1.05)' : 'none',
-                                        zIndex: isHighlighted ? 10 : 'auto',
-                                        transition: 'none', // Remove transition
-                                        color: 'white',
-                                        fontWeight: 400,
-                                        padding: '4px 8px',
-                                        borderRadius: '8px',
-                                        marginBottom: '4px',
-                                        textAlign: 'center',
-                                        fontSize: '0.8em' // Increase font size for events
-                                    }}
+                                <ShowEventDialog
+                                    key={eventIndex}
+                                    event={event}
+                                    accountId={props.accountId}
+                                    updateCallback={props.updateCallback}
                                 >
-                                    <ShowEventDialog event={event} accountId={props.accountId} updateCallback={props.updateCallback}>
+                                    <div 
+                                        className={`event${isHighlighted ? " highlighted-event" : ""}`}
+                                        style={{ 
+                                            backgroundColor: event.color,
+                                            boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 'none',
+                                            transform: isHighlighted ? 'scale(1.05)' : 'none',
+                                            zIndex: isHighlighted ? 10 : 'auto',
+                                            transition: 'none',
+                                            color: 'white',
+                                            fontWeight: 400,
+                                            padding: '4px 8px',
+                                            borderRadius: '8px',
+                                            marginBottom: '4px',
+                                            textAlign: 'center',
+                                            fontSize: '0.8em',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
                                         {event.title}
-                                    </ShowEventDialog>
-                                </div>
+                                    </div>
+                                </ShowEventDialog>
                             );
                         })}
 

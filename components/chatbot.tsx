@@ -179,6 +179,7 @@ const ChatBot = () => {
           title: event.title,
           date: event.date,
           time: event.time,
+          // Use the event's color or generate a random one
           color: event.color || getRandomEventColor(event.title)
         });
       });
@@ -186,7 +187,7 @@ const ChatBot = () => {
     
     setEventMap(map);
   };
-  
+
   // Generate a consistent color for events that don't have a color
   const getRandomEventColor = (title: string) => {
     // Generate a color based on the event title (for consistency)
@@ -384,8 +385,8 @@ const ChatBot = () => {
         
         sortedEvents.forEach(event => {
           if (eventCount >= maxEvents) return;
-          // Add color information to help Claude understand which events to highlight
-          const colorInfo = event.color ? ` [color: ${event.color}]` : '';
+          // Explicitly include the color in the event info
+          const colorInfo = event.color ? ` [color=${event.color}]` : '';
           summary += `- ${event.time}: ${event.title}${colorInfo} (${event.location || 'No location'})`;
           if (event.description) {
             summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
