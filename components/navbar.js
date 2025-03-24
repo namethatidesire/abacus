@@ -86,13 +86,6 @@ const Navbar = () => {
                             </IconButton>
                         </Link>
                     </Tooltip>
-                    
-                    <Tooltip title="Account Information" arrow>  
-                        <IconButton className="navbar-icon">
-                            <Person sx={{ color: '#FBE59D' }} />
-                        </IconButton>
-                    </Link>
-                </Tooltip>
                 
                 <Tooltip title="Study Tools" arrow>  
                     <Link href="/study_tools">
@@ -100,12 +93,6 @@ const Navbar = () => {
                             <LocalLibrary sx={{ color: '#FBE59D' }} />
                         </IconButton>
                     </Link>
-                </Tooltip>
-
-                <Tooltip title="Account Information" arrow>  
-                    <IconButton className="navbar-icon">
-                        <Person sx={{ color: '#FBE59D' }} />
-                    </IconButton>
                 </Tooltip>
 
                     {/* Chat Button */}
