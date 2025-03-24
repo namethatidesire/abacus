@@ -97,17 +97,19 @@
   height: 100%; /* Use full height of parent */
 }
 
-/* Calendar day cells */
 .calendar-day {
-  height: auto; /* Changed from fixed 120px */
-  min-height: 15vh; /* Minimum height based on viewport */
+  height: auto;
+  min-height: 15vh;
   width: 100%;
   border-right: 1px solid #E5E5E5;
   border-bottom: 1px solid #E5E5E5;
   padding: 0.5rem;
   position: relative;
-  overflow-y: auto; /* Add scrolling for overflow content */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .calendar-day p {
   margin: 0;
@@ -122,8 +124,18 @@
 
 /* Today's date */
 .today p {
-  color: #CC0000 !important;
+  color: rgb(255, 255, 255) !important;
   font-weight: bold;
+  text-align: right;
+  position: relative;
+  border-radius: 50%;
+  background-color: #8CA7D6;
+  width: 1.8em;
+  height: 1.8em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
 }
 
 /* Selected date */
