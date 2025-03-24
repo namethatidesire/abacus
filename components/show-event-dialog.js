@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
     Button,
     Dialog,
@@ -22,6 +22,20 @@ export default function ShowEventDialog({
     onAcknowledgeConflict
 }) {
     const [open, setOpen] = React.useState(false);
+    const [conflictAcknowledged, setConflictAcknowledged] = React.useState(false);
+    
+    // Generate a unique conflict ID based on the event and conflicting events
+    const conflictId = hasConflict 
+        ? `conflict-${event.id}-${conflictingEvents.map(e => e.id).join('-')}`
+        : null;
+    
+    // Check if this conflict was previously acknowledged
+    useEffect(() => {
+        if (conflictId) {
+            const acknowledged = localStorage.getItem(conflictId) === 'acknowledged';
+            setConflictAcknowledged(acknowledged);
+        }
+    }, [conflictId]);
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -32,8 +46,14 @@ export default function ShowEventDialog({
     };
 
     const handleAcknowledgeConflict = () => {
+        // Store acknowledgment in localStorage
+        if (conflictId) {
+            localStorage.setItem(conflictId, 'acknowledged');
+            setConflictAcknowledged(true);
+        }
+        
+        // Call the parent callback
         onAcknowledgeConflict();
-        // Don't close the dialog
     };
 
     const deleteEvent = async () => {
@@ -76,19 +96,17 @@ export default function ShowEventDialog({
                         ))}
                     </div>
                     
-                    {/* Add conflict warning and acknowledgment */}
-                    {hasConflict && (
+                    {/* Only show conflict warning if not acknowledged */}
+                    {hasConflict && !conflictAcknowledged && (
                         <>
-                            <DialogContentText sx={{ color: 'error.main', mt: 2 }}>
-                                <Typography variant="subtitle1" color="error">
-                                    ⚠️ This event conflicts with:
+                            <Typography variant="subtitle1" color="error" sx={{ mt: 2 }}>
+                                ⚠️ This event conflicts with:
+                            </Typography>
+                            {conflictingEvents.map((conflictEvent, index) => (
+                                <Typography key={index} variant="body2" sx={{ ml: 2 }}>
+                                    • {conflictEvent.title} ({conflictEvent.time})
                                 </Typography>
-                                {conflictingEvents.map((conflictEvent, index) => (
-                                    <Typography key={index} variant="body2" sx={{ ml: 2 }}>
-                                        • {conflictEvent.title} ({conflictEvent.time})
-                                    </Typography>
-                                ))}
-                            </DialogContentText>
+                            ))}
                             <Button 
                                 onClick={handleAcknowledgeConflict}
                                 color="warning"

@@ -10,6 +10,7 @@ import './style.css';
 import CreateEventDialog from "./create-event-dialog";
 import SearchFilterEventsDialog from "./searchFilterEvents";
 import ShowEventDialog from './show-event-dialog.js';
+import EventSidebar from './event-sidebar.js';
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -208,113 +209,122 @@ export default class Calendar extends Component {
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Navbar />
 
-                <div className="calendar">
-                    {/* Calendar Header */}
-                    <div className="calendar-header">
-                        <button className="nav-button" onClick={this.previousMonth}>
-                            <ArrowBackIos sx={{ fontSize: 40, color: '#000' }} />
-                        </button>
-                        
-                        <div className="title-container">
-                            <Typography 
-                                variant="h4" 
-                                className="title"
-                                sx={{ 
-                                    fontFamily: crimsonPro.style.fontFamily,
-                                    fontWeight: 600
-                                }}
-                            >
-                                {this.months[currentDay.getMonth()]} {currentDay.getFullYear()}
-                            </Typography>
-                            <Typography 
-                                variant="subtitle1" 
-                                className="current-date"
-                                onClick={this.toggleView}
-                                sx={{ 
-                                    fontFamily: crimsonPro.style.fontFamily,
-                                    fontWeight: 500,
+                <div className="calendar-container">
+                    <EventSidebar 
+                        currentDay={currentDay}
+                        events={events}
+                        accountId={this.state.accountId}
+                        updateCallback={this.updateEvents}
+                    />
+                    
+                    <div className="calendar">
+                        {/* Calendar Header */}
+                        <div className="calendar-header">
+                            <button className="nav-button" onClick={this.previousMonth}>
+                                <ArrowBackIos sx={{ fontSize: 40, color: '#000' }} />
+                            </button>
+                            
+                            <div className="title-container">
+                                <Typography 
+                                    variant="h4" 
+                                    className="title"
+                                    sx={{ 
+                                        fontFamily: crimsonPro.style.fontFamily,
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    {this.months[currentDay.getMonth()]} {currentDay.getFullYear()}
+                                </Typography>
+                                <Typography 
+                                    variant="subtitle1" 
+                                    className="current-date"
+                                    onClick={this.toggleView}
+                                    sx={{ 
+                                        fontFamily: crimsonPro.style.fontFamily,
+                                        fontWeight: 500,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {this.formatCurrentDate()}
+                                </Typography>
+                            </div>
+                            
+                            <button className="nav-button" onClick={this.nextMonth}>
+                                <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
+                            </button>
+
+                            {/* Add Create Event Button */}
+                            <button 
+                                className="nav-button"
+                                onClick={() => this.setState({ showCreateDialog: true })}
+                                style={{ 
+                                    backgroundColor: '#1976d2',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '4px',
                                     cursor: 'pointer'
                                 }}
                             >
-                                {this.formatCurrentDate()}
-                            </Typography>
-                        </div>
-                        
-                        <button className="nav-button" onClick={this.nextMonth}>
-                            <ArrowForwardIos sx={{ fontSize: 40, color: '#000' }} />
-                        </button>
+                                Create Event
+                            </button>
 
-                        {/* Add Create Event Button */}
-                        <button 
-                            className="nav-button"
-                            onClick={() => this.setState({ showCreateDialog: true })}
-                            style={{ 
-                                backgroundColor: '#1976d2',
-                                color: 'white',
-                                border: 'none',
-                                padding: '8px 16px',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Create Event
-                        </button>
-
-                        <CreateEventDialog 
-                            accountId={this.state.accountId}
-                            callback={this.updateEvents}
-                            open={this.state.showCreateDialog}
-                            onClose={() => this.setState({ showCreateDialog: false })}
-                            selectedDate={this.state.selectedDate}
-                            position={this.state.dialogPosition}
-                        />
-                        <SearchFilterEventsDialog accountId={this.state.accountId}/>
-                    </div>
-
-                    {/* Add CreateEventDialog with selected date */}
-
-                    {/* Calendar Body */}
-                    <div className="calendar-body">
-                        {view === 'month' ? (
-                            <>
-                                <div className="table-header">
-                                    {this.weekdays.map((weekday, index) => (
-                                        <div key={index} className="weekday">
-                                            <Typography 
-                                                variant="subtitle1"
-                                                sx={{ 
-                                                    fontFamily: crimsonPro.style.fontFamily,
-                                                    fontWeight: 400
-                                                }}
-                                            >
-                                                {weekday}
-                                            </Typography>
-                                        </div>
-                                    ))}
-                                </div>
-                                <CalendarDays 
-                                    day={currentDay} 
-                                    changeCurrentDay={this.changeCurrentDay} 
-                                    createEvent={this.createEvent} 
-                                    events={events}
-                                    updateCallback={this.updateEvents}
-                                    accountId={this.state.accountId}
-                                    highlightedEventId={this.state.highlightedEventId}
-                                    onCreateEvent={(date) => this.setState({ 
-                                        showCreateDialog: true, 
-                                        selectedDate: date
-                                    })}
-                                    // onEventClick={this.handleEventClick}
-                                />
-                            </>
-                        ) : (
-                            <WeeklyView 
-                                currentDay={currentDay}
-                                events={events}
+                            <CreateEventDialog 
                                 accountId={this.state.accountId}
-                                updateCallback={this.updateEvents}
+                                callback={this.updateEvents}
+                                open={this.state.showCreateDialog}
+                                onClose={() => this.setState({ showCreateDialog: false })}
+                                selectedDate={this.state.selectedDate}
+                                position={this.state.dialogPosition}
                             />
-                        )}
+                            <SearchFilterEventsDialog accountId={this.state.accountId}/>
+                        </div>
+
+                        {/* Add CreateEventDialog with selected date */}
+
+                        {/* Calendar Body */}
+                        <div className="calendar-body">
+                            {view === 'month' ? (
+                                <>
+                                    <div className="table-header">
+                                        {this.weekdays.map((weekday, index) => (
+                                            <div key={index} className="weekday">
+                                                <Typography 
+                                                    variant="subtitle1"
+                                                    sx={{ 
+                                                        fontFamily: crimsonPro.style.fontFamily,
+                                                        fontWeight: 400
+                                                    }}
+                                                >
+                                                    {weekday}
+                                                </Typography>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <CalendarDays 
+                                        day={currentDay} 
+                                        changeCurrentDay={this.changeCurrentDay} 
+                                        createEvent={this.createEvent} 
+                                        events={events}
+                                        updateCallback={this.updateEvents}
+                                        accountId={this.state.accountId}
+                                        highlightedEventId={this.state.highlightedEventId}
+                                        onCreateEvent={(date) => this.setState({ 
+                                            showCreateDialog: true, 
+                                            selectedDate: date
+                                        })}
+                                        // onEventClick={this.handleEventClick}
+                                    />
+                                </>
+                            ) : (
+                                <WeeklyView 
+                                    currentDay={currentDay}
+                                    events={events}
+                                    accountId={this.state.accountId}
+                                    updateCallback={this.updateEvents}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
