@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/navbar.js'; 
@@ -7,7 +7,13 @@ import Navbar from '../../components/navbar.js';
 const Dashboard = () => {
   const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState('beloved user');
-  const [events, setEvents] = useState([]);
+  interface Event {
+    id: string;
+    date: string;
+    title: string;
+  }
+
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true); // Add loading state
   const today = new Date().toLocaleDateString();
 

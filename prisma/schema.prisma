@@ -40,7 +40,7 @@ model Event {
   userId String
   title String
   date DateTime @default(now())
-  recurring Boolean
+  recurring String? // Currently can be Daily, Weekly, Monthly, Yearly
   color String
   type String // Currently can be an EVENT or TASK.
   tags Tag[] // Tags for filtering
@@ -52,8 +52,8 @@ model Event {
 
   // Possible new fields for future update
   description String?
-  start DateTime?
-  end DateTime?
+  endDate DateTime?
+  reminder String? // Currently can be None, 5 minutes, 15 minutes, 30 minutes, 1 hour, 1 day, 1 week
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -81,7 +81,7 @@ model Course {
   id    String  @id @default(uuid())
   name  String  @unique
   tag   String  @unique
-  colour String 
+  colour String
 
   userId String
   user   User    @relation(fields: [userId], references: [id]) // Each course is associated with one user

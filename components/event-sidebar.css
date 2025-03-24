@@ -1,0 +1,88 @@
+.event-sidebar {
+    width: 300px;
+    height: 100%;
+    background-color: white;
+    border-right: 1px solid #E5E5E5;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #E5E5E5;
+    display: flex;
+    justify-content: center; /* Changed from space-between to center */
+    align-items: center;
+  }
+  
+  .sidebar-date {
+    color: #333;
+    text-align: center; /* Added for extra emphasis on centering */
+  }
+  
+  .sidebar-content {
+    padding: 16px;
+  }
+  
+  .sidebar-event-card {
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .sidebar-event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .event-time {
+    font-size: 0.9rem;
+    color: #000; /* Changed from #666 to #000 */
+    margin-bottom: 4px;
+  }
+  
+  .event-title {
+    font-weight: 600;
+    color: #000; /* Added explicit color */
+    margin-bottom: 4px;
+  }
+  
+  .event-location {
+    font-size: 0.85rem;
+    color: #000; /* Changed from #666 to #000 */
+    margin-bottom: 4px;
+  }
+  
+  .event-description {
+    font-size: 0.85rem;
+    color: #000; /* Changed from #666 to #000 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .no-events {
+    color: #999;
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  /* For mobile responsiveness */
+  @media (max-width: 768px) {
+    .event-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      z-index: 1000;
+      transform: translateX(-100%);
+    }
+    
+    .event-sidebar.open {
+      transform: translateX(0);
+    }
+  }

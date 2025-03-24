@@ -13,6 +13,7 @@ export async function POST(request) {
     // Check for duplicate course by name or tag
     const course = await prisma.course.findFirst({
       where: {
+        userId,
         OR: [
           { name },
           { tag }
@@ -22,6 +23,15 @@ export async function POST(request) {
 
     if (course) {
       return NextResponse.json({ message: "Course already exists" }, { status: 400 });
+    }
+
+    // Check if the tag exists
+    const existingTag = await prisma.tag.findUnique({
+      where: { name: tag }
+    });
+
+    if (!existingTag) {
+      return NextResponse.json({ message: "Tag does not exist" }, { status: 400 });
     }
 
     // Create new course
