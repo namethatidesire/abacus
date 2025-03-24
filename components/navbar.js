@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from "next/link";
 import { Typography, IconButton, Tooltip } from "@mui/material";
-import { Menu, Home, Person, CalendarMonth, Logout, UploadFile, Class, Chat } from "@mui/icons-material";
+import { Menu, Home, Person, CalendarMonth, Logout, UploadFile, Class, Chat, LocalLibrary} from "@mui/icons-material";
 import './navbar.css';
 import ChatBot from '../components/chatbot'; // Import your existing ChatBot component
 
@@ -91,7 +91,22 @@ const Navbar = () => {
                         <IconButton className="navbar-icon">
                             <Person sx={{ color: '#FBE59D' }} />
                         </IconButton>
-                    </Tooltip>
+                    </Link>
+                </Tooltip>
+                
+                <Tooltip title="Study Tools" arrow>  
+                    <Link href="/study_tools">
+                        <IconButton className="navbar-icon">
+                            <LocalLibrary sx={{ color: '#FBE59D' }} />
+                        </IconButton>
+                    </Link>
+                </Tooltip>
+
+                <Tooltip title="Account Information" arrow>  
+                    <IconButton className="navbar-icon">
+                        <Person sx={{ color: '#FBE59D' }} />
+                    </IconButton>
+                </Tooltip>
 
                     {/* Chat Button */}
                     <Tooltip title="Study Assistant" arrow>
