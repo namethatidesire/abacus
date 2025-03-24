@@ -271,13 +271,14 @@ const ChatBot = () => {
         throw new Error('User ID not available');
       }
 
-      // Use cached events or fetch fresh ones
-      let userEvents = events;
-      if (Object.keys(userEvents).length === 0) {
-        userEvents = await fetchUserEvents();
+      // Always fetch fresh events before sending the query
+      const userEvents = await fetchUserEvents();
+      if (userEvents) {
+        setEvents(userEvents);
+        buildEventMap(userEvents);
       }
       
-      const eventSummary = formatEventSummary(userEvents);
+      const eventSummary = formatEventSummary(userEvents || events);
       
       const response = await fetch('http://localhost:3000/api/chatbot', {
         method: 'POST',
@@ -303,7 +304,7 @@ const ChatBot = () => {
             1. When you mention an event in your response, always use the EXACT title of the event 
             as it appears in the schedule information.
             
-            2. Only suggest the user to create an event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
+            2. Only suggest the user to create a new event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
             "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Description: description here]"
 
             3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
@@ -538,13 +539,6 @@ const ChatBot = () => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
-
-    // Refresh events data before processing the query
-    const freshEvents = await fetchUserEvents(userId);
-    if (freshEvents) {
-      setEvents(freshEvents);
-      buildEventMap(freshEvents);
-    }
     
     // Simulate bot typing
     setIsTyping(true);
@@ -595,21 +589,33 @@ const createEvent = async (suggestedEvent: any) => {
     
     // Parse the date (assuming it's in YYYY-MM-DD format)
     let eventDate = new Date(suggestedEvent.date);
+    const currentTime = new Date();
     
-    // Prepare the event data according to the Prisma schema
+    // Format time to match API expectations
+    const time = suggestedEvent.start || 
+               `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
+    
+    // Calculate end date (1 hour after start if not specified)
+    const startDateTime = new Date(eventDate);
+    startDateTime.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]));
+    
+    const endDateTime = suggestedEvent.end ? new Date(`${suggestedEvent.date}T${suggestedEvent.end}`) 
+                                          : new Date(startDateTime.getTime() + 60 * 60 * 1000);
+    
+    // Prepare the event data according to the API expectations
+    // Based on what createEvent in create-event-dialog.js expects
     const eventData = {
-      // No need to manually set id, Prisma will generate with @default(uuid())
       userId: userId,
       title: suggestedEvent.title,
-      date: eventDate.toISOString(), // Main date field
-      recurring: false,
+      date: startDateTime.toISOString(),
+      time: time,
+      recurring: "None",
       color: suggestedEvent.color || newEventData.color || '#8CA7D6',
-      type: 'EVENT',
-      // Handle tags properly - must be connected, not created inline
-      tags: {
-        connect: suggestedEvent.tags?.map((tag: string) => ({ id: tag })) || []
-      },
-      description: suggestedEvent.description || ''
+      description: suggestedEvent.description || '',
+      endDate: endDateTime.toISOString(),
+      type: "EVENT",
+      reminder: "None",
+      tags: []
     };
 
     console.log('Creating event with data:', eventData);
