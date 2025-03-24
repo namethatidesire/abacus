@@ -54,6 +54,8 @@ export default function CreateEventDialog(props) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
+            estimatedTime: isEstimatedTimeEnabled ? parseInt(estimatedTime) : null, // Add estimatedTime
+            difficulty: isSliderEnabled ? difficulty : null, // Add difficulty
         };
 
         try {

@@ -24,8 +24,6 @@ export async function POST(request) {
           }))
         },
         description,
-        start,
-        end,
         estimatedTime, // Add estimatedTime estimatedTime, // Add estimatedTime
         difficulty, // Add difficulty difficulty // Add difficulty
         endDate,
@@ -43,7 +41,7 @@ export async function POST(request) {
 // update event
 export async function PUT(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags, estimatedTime, difficulty, reminder } = await request.json();
+    const { id, userId, title, date, recurring, color, description, type, tags, estimatedTime, difficulty, endDate, reminder } = await request.json();
     const event = await prisma.event.update({
       where: {
         id
@@ -65,9 +63,8 @@ export async function PUT(request) {
           }))
         },
         description,
-        start,
-        end,
-        estimatedTime, // Add estimatedTime
+        endDate,
+        estimatedTime, // Add estimatedTime    estimatedTime, // Add estimatedTime
         difficulty, // Add difficulty
         reminder
       }

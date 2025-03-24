@@ -397,7 +397,6 @@ export default class Calendar extends Component {
                             )}
                         </div>
                     </div>
-                
             </div>
             {/* Event Details Dialog */}
             <Dialog open={dialogOpen} onClose={this.handleCloseDialog}>
