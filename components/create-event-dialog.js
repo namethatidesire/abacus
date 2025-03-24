@@ -26,6 +26,8 @@ export default function CreateEventDialog(props) {
     const [eventDateTime, setEventDateTime] = React.useState(dayjs());
     const [estimatedTime, setEstimatedTime] = React.useState('');
     const [difficulty, setDifficulty] = React.useState(1);
+    const [isSliderEnabled, setIsSliderEnabled] = React.useState(false);
+    const [isEstimatedTimeEnabled, setIsEstimatedTimeEnabled] = React.useState(false);
 
     const accountId = props.accountId;
 
@@ -39,10 +41,6 @@ export default function CreateEventDialog(props) {
 
     // Function to create an event
     const createEvent = async function() {
-        // Prompt the user for the event title, color, and time
-        // const eventTitle = prompt("Enter event title:");
-        // const eventColor = prompt("Enter event color (e.g., #FF0000):");
-        // const eventTime = prompt("Enter event time (HH:MM):");
         const newEvent = {
             userId: accountId,
             title: eventTitle,
@@ -54,8 +52,8 @@ export default function CreateEventDialog(props) {
             start: null,
             end: null, 
             type: "EVENT",
-            estimatedTime: parseInt(estimatedTime), // Add estimatedTime
-            difficulty: difficulty // Add difficulty
+            estimatedTime: isEstimatedTimeEnabled ? parseInt(estimatedTime) : null, // Add estimatedTime
+            difficulty: isSliderEnabled ? difficulty : null // Add difficulty
         };
 
         try {
@@ -82,6 +80,12 @@ export default function CreateEventDialog(props) {
         { value: 3, label: 'Medium' },
         { value: 5, label: 'Hard' }
     ];
+
+    // Function to toggle the slider and estimated time input
+    const toggleSliderAndEstimatedTime = () => {
+        setIsSliderEnabled(!isSliderEnabled);
+        setIsEstimatedTimeEnabled(!isEstimatedTimeEnabled);
+    };
 
     return <React.Fragment>
         <Button variant="outlined" onClick={handleClickOpen}>
@@ -114,30 +118,42 @@ export default function CreateEventDialog(props) {
                         onChange={(newValue) => setEventDateTime(newValue)}
                     />
                 </LocalizationProvider>
-                <TextField
-                    margin="dense"
-                    id="estimatedTime"
-                    name="estimatedTime"
-                    label="Estimated Time (minutes)"
-                    type="number"
-                    fullWidth
-                    variant="standard"
-                    value={estimatedTime}
-                    onChange={(e) => setEstimatedTime(e.target.value)}
-                />
-                <Typography gutterBottom>
-                    Difficulty
-                </Typography>
-                <Slider
-                    value={difficulty}
-                    onChange={(e, newValue) => setDifficulty(newValue)}
-                    aria-labelledby="difficulty-slider"
-                    valueLabelDisplay="auto"
-                    step={1}
-                    marks={difficultyMarks}
-                    min={1}
-                    max={5}
-                />
+                
+                <div style={{margin: "10px 0"}}>
+                <Button onClick={toggleSliderAndEstimatedTime} style={{ margin: "10px 0" }}>
+                    {isSliderEnabled && isEstimatedTimeEnabled ? 'Disable' : 'Enable'} Slider and Estimated Time
+                </Button>
+                </div>
+                {isEstimatedTimeEnabled && (
+                    <TextField
+                        margin="dense"
+                        id="estimatedTime"
+                        name="estimatedTime"
+                        label="Estimated Time (hours)"
+                        type="number"
+                        fullWidth
+                        variant="standard"
+                        value={estimatedTime}
+                        onChange={(e) => setEstimatedTime(e.target.value)}
+                    />
+                )}
+                {isSliderEnabled && (
+                    <React.Fragment>
+                        <Typography gutterBottom>
+                            Difficulty
+                        </Typography>
+                        <Slider
+                            value={difficulty}
+                            onChange={(e, newValue) => setDifficulty(newValue)}
+                            aria-labelledby="difficulty-slider"
+                            valueLabelDisplay="auto"
+                            step={1}
+                            marks={difficultyMarks}
+                            min={1}
+                            max={5}
+                        />
+                    </React.Fragment>
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Cancel</Button>
