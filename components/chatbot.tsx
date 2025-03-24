@@ -305,12 +305,12 @@ const ChatBot = () => {
             as it appears in the schedule information.
             
             2. Only suggest the user to create a new event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
-            "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Description: description here]"
+            "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Color: #8CA7D6 | Description: description here | Tags: tag1,tag2]"
 
             3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
             
             For example:
-            "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Description: Weekly team sync-up]"
+            "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Start: 14:00 | End: 15:00 | Color: #8CA7D6 | Description: Weekly team sync-up | Tags: work,meeting]"
             
             If they ask about specific dates or times, refer to the schedule information provided.
             If they ask for schedule analysis, provide insights based on their event distribution.
@@ -401,59 +401,65 @@ const ChatBot = () => {
     return summary;
   };
 
-  // Process response text to find event suggestions
-  const processEventSuggestions = (text: string): MessagePart[] => {
-    if (!text) return [{ text, isHighlighted: false }];
+// Process response text to find event suggestions
+const processEventSuggestions = (text: string): MessagePart[] => {
+  if (!text) return [{ text, isHighlighted: false }];
+  
+  // Updated regex to match the new event suggestion format
+  const eventSuggestionRegex = /\[Title: ([^|]+)\s*\|\s*Date: ([^|]+)\s*\|\s*Start: ([^|]+)\s*\|\s*End: ([^|]+)\s*\|\s*Color: ([^|]+)\s*\|\s*Description: ([^|]+)\s*\|\s*Tags: ([^\]]+)\]/g;
+  
+  // Also detect existing events
+  const existingEventsHighlights = highlightEvents(text);
+  
+  // Combine both event detection mechanisms
+  let result: MessagePart[] = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = eventSuggestionRegex.exec(text)) !== null) {
+    // Get text before the match
+    const beforeText = text.substring(lastIndex, match.index);
     
-    // Regular expression to match suggested events in the format:
-    // [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Description: description here]
-    const eventSuggestionRegex = /\[Title: ([^|]+)\s*\|\s*Date: ([^|]+)\s*\|\s*Description: ([^\]]+)\]/g;
-    
-    // Also detect existing events
-    const existingEventsHighlights = highlightEvents(text);
-    
-    // Combine both event detection mechanisms
-    let result: MessagePart[] = [];
-    let lastIndex = 0;
-    let match;
-    
-    while ((match = eventSuggestionRegex.exec(text)) !== null) {
-      // Get text before the match
-      const beforeText = text.substring(lastIndex, match.index);
-      
-      // Process the text before the match for existing events
-      if (beforeText) {
-        const processedBeforeText = highlightEvents(beforeText);
-        result = [...result, ...processedBeforeText];
-      }
-      
-      // Add the suggested event as a special part
-      const suggestedEvent = {
-        title: match[1].trim(),
-        date: match[2].trim(),
-        description: match[3].trim()
-      };
-      
-      result.push({
-        text: match[0],
-        isHighlighted: true,
-        isEventSuggestion: true,
-        suggestedEvent,
-        color: '#4CAF50' // Green color for suggested events
-      });
-      
-      lastIndex = match.index + match[0].length;
+    // Process the text before the match for existing events
+    if (beforeText) {
+      const processedBeforeText = highlightEvents(beforeText);
+      result = [...result, ...processedBeforeText];
     }
     
-    // Process the remaining text for existing events
-    if (lastIndex < text.length) {
-      const remainingText = text.substring(lastIndex);
-      const processedRemainingText = highlightEvents(remainingText);
-      result = [...result, ...processedRemainingText];
-    }
+    // Add the suggested event as a special part with all new fields
+    const suggestedEvent = {
+      title: match[1].trim(),
+      date: match[2].trim(),
+      start: match[3].trim(),
+      end: match[4].trim(),
+      color: match[5].trim(),
+      description: match[6].trim(),
+      tags: match[7].trim().split(',').map(tag => ({ 
+        name: tag.trim(), 
+        color: '#FF0000' // Default color for tags
+      }))
+    };
     
-    return result;
-  };
+    result.push({
+      text: match[0],
+      isHighlighted: true,
+      isEventSuggestion: true,
+      suggestedEvent,
+      color: suggestedEvent.color || '#4CAF50' // Use the suggested color or fallback to green
+    });
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Process the remaining text for existing events
+  if (lastIndex < text.length) {
+    const remainingText = text.substring(lastIndex);
+    const processedRemainingText = highlightEvents(remainingText);
+    result = [...result, ...processedRemainingText];
+  }
+  
+  return result;
+};
 
   // Highlight event titles in message text
   const highlightEvents = (text: string): MessagePart[] => {
@@ -572,53 +578,53 @@ const ChatBot = () => {
   };
 
   // Create a new event based on suggestion
-const createEvent = async (suggestedEvent: any) => {
-  if (!userId) {
-    setError('User ID not available. Please log in again.');
-    return;
-  }
-  
-  setIsCreatingEvent(true);
-  setEventCreationSuccess(null);
-  
-  try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('Authentication token not found');
+  const createEvent = async (suggestedEvent: any) => {
+    if (!userId) {
+      setError('User ID not available. Please log in again.');
+      return;
     }
     
-    // Parse the date (assuming it's in YYYY-MM-DD format)
-    let eventDate = new Date(suggestedEvent.date);
-    const currentTime = new Date();
+    setIsCreatingEvent(true);
+    setEventCreationSuccess(null);
     
-    // Format time to match API expectations
-    const time = suggestedEvent.start || 
-               `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
-    
-    // Calculate end date (1 hour after start if not specified)
-    const startDateTime = new Date(eventDate);
-    startDateTime.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]));
-    
-    const endDateTime = suggestedEvent.end ? new Date(`${suggestedEvent.date}T${suggestedEvent.end}`) 
-                                          : new Date(startDateTime.getTime() + 60 * 60 * 1000);
-    
-    // Prepare the event data according to the API expectations
-    // Based on what createEvent in create-event-dialog.js expects
-    const eventData = {
-      userId: userId,
-      title: suggestedEvent.title,
-      date: startDateTime.toISOString(),
-      time: time,
-      recurring: "None",
-      color: suggestedEvent.color || newEventData.color || '#8CA7D6',
-      description: suggestedEvent.description || '',
-      endDate: endDateTime.toISOString(),
-      type: "EVENT",
-      reminder: "None",
-      tags: []
-    };
-
-    console.log('Creating event with data:', eventData);
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      // Parse the date (assuming it's in YYYY-MM-DD format)
+      let eventDate = new Date(suggestedEvent.date);
+      
+      // Format times to match API expectations
+      const startTime = suggestedEvent.start || 
+                 `${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+      
+      // Calculate start and end datetimes
+      const startDateTime = new Date(`${suggestedEvent.date}T${startTime}`);
+      const endDateTime = suggestedEvent.end
+                        ? new Date(`${suggestedEvent.date}T${suggestedEvent.end}`)
+                        : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+      
+      // Process tags if available
+      const tags = suggestedEvent.tags || [];
+      
+      // Prepare the event data according to the API expectations
+      const eventData = {
+        userId: userId,
+        title: suggestedEvent.title,
+        date: startDateTime.toISOString(),
+        time: startTime,
+        recurring: "None",
+        color: suggestedEvent.color || newEventData.color || '#8CA7D6',
+        description: suggestedEvent.description || '',
+        endDate: endDateTime.toISOString(),
+        type: "EVENT",
+        reminder: "None",
+        tags: tags
+      };
+  
+      console.log('Creating event with data:', eventData);
     
     const response = await fetch(`/api/event/${userId}`, {
       method: 'POST',
@@ -808,7 +814,7 @@ const createEvent = async (suggestedEvent: any) => {
                   backgroundColor: part.color || '#e0e0e0',
                   padding: '1px 4px',
                   borderRadius: '3px',
-                  color: getContrastColor(part.color || '#e0e0e0'),
+                  color: '#ffffff', // Always use white text for highlighted events
                   fontWeight: 500,
                   whiteSpace: 'pre-wrap',
                   cursor: 'pointer' // Add pointer cursor to indicate it's interactive
