@@ -37,6 +37,16 @@ export default function ShowEventDialog({
         // Don't close the dialog
     };
 
+    const deleteEvent = async () => {
+        try {
+            await fetch(`/api/event/${accountId}?id=${event.id}`, {method: 'DELETE'});
+            updateCallback();
+            handleClose();
+        } catch (error) {
+            console.error('Error deleting event:', error);
+        }
+    }
+
     return (
         <React.Fragment>
             <div onClick={handleClickOpen}>
@@ -46,6 +56,7 @@ export default function ShowEventDialog({
                 <DialogTitle>
                     {event.title}
                     <UpdateEventDialog accountId={accountId} event={event} callback={updateCallback} />
+                    <Button onClick={deleteEvent} variant="outlined">Delete</Button>
                 </DialogTitle>
                 <DialogContent>
                     <Typography>{dayjs(event.date + event.time).format('dddd, MMM. D, YYYY h:mm A')}</Typography>
