@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/navbar.js'; 
 // import eventServiceConfig from '../../configs/eventservice.json';
+import RenderProgressBar from '../../components/progressbar.js';
 
 const Dashboard = () => {
   const [userId, setUserId] = useState(null);
@@ -118,6 +119,9 @@ const Dashboard = () => {
           ) : (
             <p>No events planned for today.</p>
           )}
+          <div>
+            <RenderProgressBar />
+          </div>
         </div>
       </div>
     </div>

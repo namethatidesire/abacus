@@ -7,7 +7,7 @@ export async function POST(request, { params }) {
 	    const {userId, eventType} = await request.json();
 
 		let eventCounts;
-		eventCoun   ts = await prisma.event.count({
+		eventCounts = await prisma.event.count({
 			select: {
                 completeEvents: {
                     where:  {
@@ -39,7 +39,7 @@ export async function POST(request, { params }) {
                 },
 			},
 		});
-		return NextResponse.json(foundEvents, { status: 200 });
+		return NextResponse.json(eventCounts, { status: 200 });
 	} catch (error) {
 	    console.log(error);
 		return NextResponse.json({ message: "An error occurred", error: error }, { status: 500 });
