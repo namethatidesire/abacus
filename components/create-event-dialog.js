@@ -1,66 +1,65 @@
 import React from "react";
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    TextField
-} from "@mui/material";
-import {CirclePicker} from "react-color";
-import {DateTimePicker, LocalizationProvider} from "@mui/x-date-pickers";
-import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { Description } from "@mui/icons-material";
+import { Button } from "@mui/material";
+import { BaseEventDialog } from "./base-event-dialog";
 
-// @param props: accountId, callback
+// @param props: accountId, callback, open, onClose, selectedDate
 // accountId: the id of the user creating the event
 // callback: a function to call after creating the event (e.g. to update the calendar)
+// open: boolean to control dialog visibility
+// onClose: function to call when closing the dialog
+// selectedDate: date object for pre-populating the event date
 export default function CreateEventDialog(props) {
-    const [open, setOpen] = React.useState(false);
-    const [eventColor, setEventColor] = React.useState('#FF0000');
-    const [eventTitle, setEventTitle] = React.useState('');
-    const [eventDateTime, setEventDateTime] = React.useState(dayjs());
-
     const accountId = props.accountId;
+    const open = props.open || false;
+    
+    const [eventData, setEventData] = React.useState({
+        title: '',
+        color: '#FF0000',
+        startDateTime: props.selectedDate ? dayjs(props.selectedDate) : dayjs(),
+        endDateTime: props.selectedDate ? dayjs(props.selectedDate).add(1, 'hour') : dayjs().add(1, 'hour'),
+        description: '',
+        recurring: 'None',
+        reminder: 'None',
+        tags: []
+    });
 
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
+    React.useEffect(() => {
+        if (props.selectedDate) {
+            setEventData(prev => ({
+                ...prev,
+                startDateTime: dayjs(props.selectedDate),
+                endDateTime: dayjs(props.selectedDate).add(1, 'hour')
+            }));
+        }
+    }, [props.selectedDate]);
 
     const handleClose = () => {
-        setOpen(false);
+        if (props.onClose) {
+            props.onClose();
+        }
     };
 
     // Function to create an event
-    const createEvent = async function() {
-
-        console.log(eventTitle);
-
-        // Prompt the user for the event title, color, and time
-        // const eventTitle = prompt("Enter event title:");
-        // const eventColor = prompt("Enter event color (e.g., #FF0000):");
-        // const eventTime = prompt("Enter event time (HH:MM):");
+    const createEvent = async () => {
         const newEvent = {
             userId: accountId,
-            title: eventTitle,
-            date: eventDateTime.toISOString(),
-            time: eventDateTime.format('HH:mm'),
-            recurring: false,
-            color: eventColor, 
-            description: null,
-            start: null,
-            end: null, 
-            type: "EVENT"
+            title: eventData.title,
+            date: eventData.startDateTime.toISOString(),
+            time: eventData.startDateTime.format('HH:mm'),
+            recurring: eventData.recurring,
+            color: eventData.color,
+            description: eventData.description,
+            endDate: eventData.endDateTime.toISOString(),
+            type: "EVENT",
+            reminder: eventData.reminder,
+            tags: eventData.tags,
         };
 
         try {
             const response = await fetch(`api/event/${accountId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newEvent),
             });
 
@@ -70,52 +69,42 @@ export default function CreateEventDialog(props) {
         } catch (error) {
             console.error('Error creating event:', error);
         }
+        
         props.callback();
         handleClose();
+    };
+
+    // If the component is being used with the Button (old style)
+    if (!props.open && !props.onClose) {
+        return (
+            <React.Fragment>
+                <Button variant="outlined" onClick={() => setOpen(true)}>
+                    Create New Event
+                </Button>
+                <BaseEventDialog
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    title="Create New Event"
+                    eventData={eventData}
+                    setEventData={setEventData}
+                    onSubmit={createEvent}
+                    submitButtonText="Create Event"
+                />
+            </React.Fragment>
+        );
     }
 
-    return <React.Fragment>
-        <Button variant="outlined" onClick={handleClickOpen}>
-            Create New Event
-        </Button>
-        <Dialog open={open} onClose={handleClose}>
-            <DialogTitle>Create New Event</DialogTitle>
-            <DialogContent>
-                <TextField
-                    autoFocus
-                    required
-                    margin="dense"
-                    id="eventTitle"
-                    name="eventTitle"
-                    label="Event Title"
-                    type="string"
-                    fullWidth
-                    variant="standard"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                />
-                <div style={{margin: "10px 0"}}>
-                    <DialogContentText>Choose a color:</DialogContentText>
-                    <ColorPicker color={eventColor} onChangeComplete={setEventColor} />
-                </div>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DateTimePicker
-                        label={"Event Date and Time:"}
-                        value={eventDateTime}
-                        onChange={(newValue) => setEventDateTime(newValue)}
-                    />
-                </LocalizationProvider>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={handleClose}>Cancel</Button>
-                <Button onClick={createEvent}>Create Event</Button>
-            </DialogActions>
-        </Dialog>
-    </React.Fragment>
-}
-
-function ColorPicker({ color, onChangeComplete }) {
+    // If the component is being used with external open/close control (new style)
     return (
-        <CirclePicker color={color} onChangeComplete={(color) => onChangeComplete(color.hex)} />
+        <BaseEventDialog
+            open={open}
+            onClose={handleClose}
+            title="Create New Event"
+            eventData={eventData}
+            setEventData={setEventData}
+            onSubmit={createEvent}
+            submitButtonText="Create Event"
+            position={props.position}
+        />
     );
 }
