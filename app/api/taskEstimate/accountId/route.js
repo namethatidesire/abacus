@@ -1,33 +1,6 @@
 import { prisma } from "@/utils/db";
 import { NextResponse } from "next/server";
 
-// create task estimate
-export async function POST(request){
-    try{
-        const{id, userId, multiplier1, multiplier2, multiplier3, multiplier4, multiplier5, divider1, divider2, divider3, divider4, divider5} = await request.json();
-        const taskEstimate = await prisma.taskEstimate.create({
-            data: {
-                id,
-                userId,
-                multiplier1,
-                multiplier2,
-                multiplier3,
-                multiplier4,
-                multiplier5,
-                divider1,
-                divider2,
-                divider3,
-                divider4,
-                divider5
-            }
-        });
-        return NextResponse.json(taskEstimate, {status: 201});
-    } catch(error){
-        console.error(error.stack);
-        return NextResponse.json({message: "An error occurred"}, {status: 500});
-    }
-}
-
 // update taskEstimate
 export async function PUT(request) {
     try {

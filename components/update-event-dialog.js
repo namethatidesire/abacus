@@ -14,7 +14,10 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
         description: event.description,
         recurring: event.recurring,
         reminder: event.reminder || 'None',
-        tags: event.tags
+        tags: event.tags,
+        estimatedTime: event.estimatedTime ? parseInt(estimatedTime) : null,
+        difficulty: event.difficulty ? difficulty : null,
+        completed: event.completed
     });
 
     const updateEvent = async () => {
@@ -31,6 +34,10 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
+            estimatedTime: eventData.estimatedTime ? parseInt(estimatedTime) : null,
+            difficulty: eventData.difficulty ? difficulty : null,
+            completed: event.completed
+
         };
 
         try {

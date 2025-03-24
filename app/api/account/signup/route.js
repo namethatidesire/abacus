@@ -33,6 +33,24 @@ export async function POST(request) {
       },
     });
 
+    // Create the TaskEstimate for the new user
+    const taskEstimate = await prisma.taskEstimate.create({
+      data: {
+          userId: newUser.id,
+          multiplier1: 1.0,
+          multiplier2: 1.0,
+          multiplier3: 1.0,
+          multiplier4: 1.0,
+          multiplier5: 1.0,
+          divider1: 0,
+          divider2: 0,
+          divider3: 0,
+          divider4: 0,
+          divider5: 0,
+      },
+    });
+
+
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     console.error(error.stack);
