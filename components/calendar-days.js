@@ -92,33 +92,47 @@ function CalendarDays(props) {
                         className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
                         onClick={(e) => {
                             // Only handle empty space clicks
-                            if (e.target.classList.contains('calendar-day') || e.target.classList.contains('MuiTypography-root')) {
+                            if (e.target.classList.contains('calendar-day')) {
                                 e.stopPropagation();
                                 props.changeCurrentDay(day);
                                 props.onCreateEvent(day.date);
                             }
                         }} 
-                        style={{ cursor: "pointer", textAlign: "right" }}
+                        style={{ 
+                            cursor: "pointer", 
+                            textAlign: "right",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-end"
+                        }}
                     >
                         <Typography 
                             variant="body2" 
                             sx={{ 
                                 fontFamily: crimsonPro.style.fontFamily,
                                 color: day.currentMonth ? '#333' : '#999', // Darker color for current month, lighter for others
-                                marginLeft: "auto", // Align to the right
                                 fontSize: '1.em', // Increase font size for calendar dates
                                 fontWeight: 'bold', // Bold the date text
+                                cursor: 'pointer',
+                                width: '1.5em',
+                                height: '1.5em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '50%',
+                                transition: 'background-color 0.2s',
+                                marginBottom: '4px',
+                                '&:hover': {
+                                    backgroundColor: day.today ? '#7a95c4' : '#e0e7f3',
+                                },
                                 ...(day.today && {
                                     backgroundColor: '#8CA7D6',
-                                    borderRadius: '50%',
-                                    width: '1.5em',
-                                    height: '1.5em',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    marginBottom: '4px' // Add space below the circle
+                                    color: 'white'
                                 })
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                props.changeCurrentDay(day);
                             }}
                         >
                             {day.number}
