@@ -3,12 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/navbar'; 
 import styles from './coursepage.module.css';
+import { Button } from '@mui/material';
+
+interface Course {
+  id: string;
+  name: string;
+  tag: string;
+  colour: string;
+  events: Array<{ id: string; title: string; date: string }>;
+}
 
 const CoursePage = () => {
   const [message, setMessage] = useState('');
-  const [createdCourse, setCreatedCourse] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [userId, setUserId] = useState(null); // State to store the user ID
+  const [createdCourse, setCreatedCourse] = useState<Course | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [userId, setUserId] = useState<string | null>(null); // State to store the user ID
 
   // Fetch user ID and verify token
   useEffect(() => {
@@ -72,7 +81,7 @@ const CoursePage = () => {
   }, [userId]); // Depend on userId to refetch courses when it changes
 
   // Create a new course
-  const createCourse = async (event) => {
+  const createCourse = async (event: React.FormEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
     const name = prompt("Enter course name:");
@@ -87,7 +96,7 @@ const CoursePage = () => {
       });
 
       if (response.status === 201) {
-        const data = await response.json();
+        const data: Course = await response.json();
         console.log(data);
         setMessage('Course created successfully!');
         setCreatedCourse(data); // Update the state with the newly created course
@@ -103,7 +112,7 @@ const CoursePage = () => {
     }
   };
 
-  const deleteCourse = async (courseId) => {
+  const deleteCourse = async (courseId: string) => {
     try {
       const response = await fetch(`http://localhost:3000/api/course_page?id=${courseId}`, {
         method: 'DELETE',
@@ -127,7 +136,7 @@ const CoursePage = () => {
   return (
     <div>
       <Navbar />
-      <h1>Courses</h1>
+      <h1 style={{color: "black"}}>Courses</h1>
       {message && <p>{message}</p>}
       {/* Creating each course */}
       {courses.map((course) => (
@@ -147,7 +156,7 @@ const CoursePage = () => {
           </article>
         </details>
       ))}
-      <button onClick={createCourse}>Create Course</button>
+      <Button variant="contained" onClick={createCourse}>Create Course</Button>
     </div>
   );
 };
