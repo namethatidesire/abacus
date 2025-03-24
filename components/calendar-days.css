@@ -7,6 +7,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
 }
 
 .event {
@@ -19,6 +20,8 @@
     margin-bottom: 2px; /* Smaller space between events */
     text-align: center;
     font-size: 0.8em; /* Increase font size for events */
+    width: 100%; /* Changed from 90% to 100% to stretch across the cell */
+    box-sizing: border-box; /* Ensure padding is included in width calculation */
 }
 
 .highlighted-event {
@@ -31,6 +34,20 @@
     padding: 4px; /* Smaller padding for the calendar days */
     font-size: 1em; /* Increase font size for the calendar days */
     font-weight: bold; /* Bold the date text */
+}
+
+/* Add this new style for the date container */
+.calendar-day-number {
+    align-self: flex-end;
+    margin-bottom: 4px;
+}
+
+/* Update the events container to allow full width */
+.calendar-day-events {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Changed from center to stretch */
 }
 
 .conflict-event {

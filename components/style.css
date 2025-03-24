@@ -1,3 +1,10 @@
+/* Update main calendar container to include sidebar */
+.calendar-container {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 64px); /* Adjust height based on navbar */
+}
+
 /* Main calendar container */
 .calendar {
   width: 100%;
@@ -8,8 +15,8 @@
   margin: 0 auto;
   color: #333;
   background-color: #fff;
-  padding-left: 20rem;
-  padding-right: 20rem;
+  padding-left: 1rem; /* Changed from 20rem to 1rem */
+  padding-right: 1rem; /* Changed from 20rem to 1rem */
 }
 
 /* Calendar Header */
