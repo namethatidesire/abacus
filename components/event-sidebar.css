@@ -11,12 +11,13 @@
     padding: 16px;
     border-bottom: 1px solid #E5E5E5;
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Changed from space-between to center */
     align-items: center;
   }
   
   .sidebar-date {
     color: #333;
+    text-align: center; /* Added for extra emphasis on centering */
   }
   
   .sidebar-content {

@@ -42,6 +42,32 @@
     margin-bottom: 4px;
 }
 
+/* Add hover effect for calendar day numbers */
+.calendar-day-number .day-number {
+    width: 1.5em;
+    height: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.calendar-day-number .day-number:hover {
+    background-color: rgba(140, 167, 214, 0.15); /* Light blue background on hover */
+    cursor: pointer;
+}
+
+/* Ensure the today style takes precedence */
+.calendar-day-number .day-number.is-today {
+    background-color: #8CA7D6;
+    color: white;
+}
+
+.calendar-day-number .day-number.is-today:hover {
+    background-color: #7a96c4; /* Slightly darker when hovering on today */
+}
+
 /* Update the events container to allow full width */
 .calendar-day-events {
     width: 100%;

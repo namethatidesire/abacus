@@ -140,23 +140,12 @@ function CalendarDays(props) {
                         <div className="calendar-day-number">
                             <Typography 
                                 variant="body2" 
+                                className={`day-number${day.today ? " is-today" : ""}`}
                                 sx={{ 
                                     fontFamily: crimsonPro.style.fontFamily,
                                     color: day.currentMonth ? '#333' : '#999',
                                     fontSize: '1.em',
                                     fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    width: '1.5em',
-                                    height: '1.5em',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '50%',
-                                    transition: 'background-color 0.2s',
-                                    ...(day.today && {
-                                        backgroundColor: '#8CA7D6',
-                                        color: 'white'
-                                    })
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation();
