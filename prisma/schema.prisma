@@ -58,9 +58,9 @@ model Event {
   user User @relation(fields: [userId], references: [id])
 }
 
-model TaskEstimate{
+model TaskEstimate {
   id String @id @default(uuid())
-  userId String
+  userId String @unique
 
   multiplier1 Decimal @default(1.0)
   multiplier2 Decimal @default(1.0)

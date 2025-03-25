@@ -8,6 +8,7 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
     const [open, setOpen] = React.useState(false);
     const [eventData, setEventData] = React.useState({
         title: event.title,
+        userId: accountId,
         color: event.color,
         startDateTime: dayjs(event.date + event.time),
         endDateTime: dayjs(event.endDate),
@@ -15,8 +16,8 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
         recurring: event.recurring,
         reminder: event.reminder || 'None',
         tags: event.tags,
-        estimatedTime: event.estimatedTime ? parseInt(estimatedTime) : null,
-        difficulty: event.difficulty ? difficulty : null,
+        estimatedTime: event.estimatedTime !== null ? parseInt(event.estimatedTime) : null,
+        difficulty: event.difficulty !== null ? event.difficulty : null,
         completed: event.completed
     });
 
@@ -34,8 +35,8 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
-            estimatedTime: eventData.estimatedTime ? parseInt(estimatedTime) : null,
-            difficulty: eventData.difficulty ? difficulty : null,
+            estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
+            difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
             completed: event.completed
 
         };

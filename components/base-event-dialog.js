@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Button,
     Dialog,
@@ -24,6 +24,15 @@ import Tags from "./tags";
 export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData, onSubmit, submitButtonText }) => {
     const [showExtraFields, setShowExtraFields] = useState(false);
     const [showActualTimeField, setShowActualTimeField] = useState(false);
+    const [estimatedTime, setEstimatedTime] = useState(null);
+
+    useEffect(() => {
+        if (open) {
+            setShowExtraFields(false);
+            setShowActualTimeField(false);
+            setEstimatedTime(null);
+        }
+    }, [open]);
 
     const handleTagsChange = (tags) => {
         const realTags = tags.map(tag =>
@@ -40,14 +49,42 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
         setShowActualTimeField(prev => !prev);
     };
 
-    const calculateEstimatedTime = (expectedTime, difficulty) => {
-        return expectedTime * 1.1;
+    const calculateEstimatedTime = async (expectedTime, difficulty, accountId) => {
+        try {
+            const response = await fetch(`api/taskEstimate/${accountId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const multiplierKey = `multiplier${difficulty}`;
+                const dividerKey = `divider${difficulty}`;
+                const multiplier = parseFloat(data[multiplierKey]);
+                const divider = parseFloat(data[dividerKey]);
+                let estimate;
+                if (divider === 0) {
+                    estimate = parseFloat(expectedTime).toFixed(2);
+                }else{
+                    estimate = (parseFloat(expectedTime) * multiplier / divider).toFixed(2);
+                }
+                return estimate;
+            }
+        } catch (error) {
+            console.error(error.stack);
+        }
+    };
+
+    const hoursAndMinutes = (time) => {
+        const hours = Math.floor(time);
+        const minutes = Math.round((time - hours) * 60);
+        return `${hours}hours ${minutes}minutes`;
     };
 
     const estimateColour = (expectedTime) => {
-        if (expectedTime < 1.2) {
+        if (estimatedTime <= expectedTime * 1.2) {
             return "green";
-        } else if (expectedTime < 1.5) {
+        } else if (estimatedTime <= expectedTime * 1.5) {
             return "orange";
         } else {
             return "red";
@@ -60,6 +97,61 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
             setEventData(prev => ({ ...prev, [field]: value }));
         }
     };
+
+    const handleTaskCompletion = async () => {
+        if (showActualTimeField && eventData.actualTime > 0) {
+            try {
+                const newRatio = (parseFloat(eventData.actualTime) / parseFloat(eventData.expectedTime)).toFixed(2);
+                const response = await fetch(`/api/taskEstimate/${eventData.userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        difficulty: eventData.difficulty,
+                        newRatio: newRatio
+                    }),
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update task completion time');
+                }
+            } catch (error) {
+                console.error(error.stack);
+            }
+        }
+    };
+
+    const handleSubmit = async () => {
+        await handleTaskCompletion();
+        onSubmit();
+    };
+
+    useEffect(() => {
+        const updateEstimatedTime = async () => {
+            if (eventData.expectedTime && eventData.difficulty && eventData.userId) {
+                const estimatedTime = await calculateEstimatedTime(eventData.expectedTime, eventData.difficulty, eventData.userId);
+                setEstimatedTime(estimatedTime);
+            }
+        };
+        updateEstimatedTime();
+    }, [eventData.expectedTime, eventData.difficulty]);
+
+    useEffect(() => {
+        if (open) {
+            const savedShowExtraFields = localStorage.getItem('showExtraFields') === 'true';
+            const savedShowActualTimeField = localStorage.getItem('showActualTimeField') === 'true';
+            setShowExtraFields(savedShowExtraFields);
+            setShowActualTimeField(savedShowActualTimeField);
+            setEstimatedTime(null);
+        }
+    }, [open]);
+
+    useEffect(() => {
+        localStorage.setItem('showExtraFields', showExtraFields);
+    }, [showExtraFields]);
+
+    useEffect(() => {
+        localStorage.setItem('showActualTimeField', showActualTimeField);
+    }, [showActualTimeField]);
 
     return (
         <Dialog open={open} onClose={onClose}>
@@ -160,10 +252,10 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                             style={{
                                 fontSize: "1.2em",
                                 fontWeight: "bold",
-                                color: calculateEstimatedTime(eventData.expectedTime || 0, eventData.difficulty || 3) < (eventData.expectedTime || 0) * 1.2 ? estimateColour(eventData.expectedTime) : "black"
+                                color: estimateColour(eventData.expectedTime)
                             }}
                         >
-                            Estimated Time to Complete: {calculateEstimatedTime(eventData.expectedTime || 0, eventData.difficulty || 3)} hours
+                            Estimated Time to Complete: {hoursAndMinutes(estimatedTime)}
                         </DialogContentText>
                         <FormControlLabel
                             control={<Checkbox checked={showActualTimeField} onChange={toggleActualTimeField} />}
@@ -184,7 +276,7 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={onSubmit}>{submitButtonText}</Button>
+                <Button onClick={handleSubmit}>{submitButtonText}</Button>
             </DialogActions>
         </Dialog>
     );
