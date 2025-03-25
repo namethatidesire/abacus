@@ -49,6 +49,7 @@ model Event {
   estimatedTime Int? // Estimated time in hours
   difficulty Int? // Difficulty level (1-5)
   completed Boolean @default(false)
+  task Boolean @default(false)
 
   // Possible new fields for future update
   description String?

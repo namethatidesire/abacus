@@ -18,6 +18,7 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
         tags: event.tags,
         estimatedTime: event.estimatedTime !== null ? parseInt(event.estimatedTime) : null,
         difficulty: event.difficulty !== null ? event.difficulty : null,
+        task: event.task,
         completed: event.completed
     });
 
@@ -37,10 +38,9 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
             tags: eventData.tags,
             estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
             difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
-            completed: event.completed
-
+            task: eventData.task,
+            completed: eventData.completed
         };
-
         try {
             const response = await fetch(`api/event/${accountId}`, {
                 method: 'PUT',

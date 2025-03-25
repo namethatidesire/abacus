@@ -121,6 +121,18 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
     };
 
     const handleSubmit = async () => {
+        if(showExtraFields){
+            eventData.task = true;
+            if(showActualTimeField){
+                eventData.completed = true;
+            }else{
+                eventData.completed = false;
+            }
+        }else{
+            eventData.task = false;
+            eventData.completed = false;
+        }
+
         await handleTaskCompletion();
         onSubmit();
     };

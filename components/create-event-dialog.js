@@ -24,6 +24,7 @@ export default function CreateEventDialog(props) {
         tags: [],
         difficulty: null,
         estimatedTime: null,
+        task: false,
         completed: false
     });
 
@@ -59,6 +60,7 @@ export default function CreateEventDialog(props) {
             tags: eventData.tags,
             estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
             difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
+            task: eventData.task,
             completed: eventData.completed
         };
 
