@@ -84,6 +84,7 @@ const ChatBot = () => {
   }
 
   interface Event {
+    tags: never[];
     id: string;
     title: string;
     date: string;
@@ -779,16 +780,16 @@ const processEventSuggestions = (text: string): MessagePart[] => {
             return (
               <span
                 key={index}
-                className="relative block my-2 px-3 py-2 rounded border border-green-500 bg-green-50"
+                className="relative block my-2 px-3 py-2 rounded border border-[#7a96c4] bg-[#f0f4fb]"
               >
-                <div className="font-medium text-green-800 mb-1">Suggested Event:</div>
+                <div className="font-medium text-[#546d9d] mb-1">Suggested Event:</div>
                 <div className="text-gray-700 mb-2">
                   <strong>{part.suggestedEvent.title}</strong> on {part.suggestedEvent.date}
                 </div>
                 <div className="text-sm text-gray-600 mb-2">{part.suggestedEvent.description}</div>
                 <button
                   onClick={() => handleEventSuggestionClick(part.suggestedEvent)}
-                  className="text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50"
+                  className="text-white bg-[#7a96c4] hover:bg-[#6785b3] px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#8CA7D6] disabled:opacity-50"
                   disabled={isCreatingEvent}
                 >
                   {isCreatingEvent ? "Creating..." : "Add to Calendar"}
@@ -796,7 +797,7 @@ const processEventSuggestions = (text: string): MessagePart[] => {
               </span>
             );
           }
-          
+
           // For existing events (highlight only)
           return (
             <span
