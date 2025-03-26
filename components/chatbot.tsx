@@ -179,6 +179,8 @@ const ChatBot = () => {
           title: event.title,
           date: event.date,
           time: event.time,
+          // Store tags if available
+          tags: event.tags || [],
           // Use the event's color or generate a random one
           color: event.color || getRandomEventColor(event.title)
         });
@@ -233,7 +235,7 @@ const ChatBot = () => {
       
       // Process events similar to Calendar.js
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; }) => {
+      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; tags?: any[] }) => {
         const eventDate = new Date(event.date);
         const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
         const dateKey = localDate.toDateString();
@@ -245,7 +247,8 @@ const ChatBot = () => {
         acc[dateKey].push({
           ...event,
           date: localDate.toISOString().split('T')[0],
-          time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+          time: localDate.toTimeString().split(' ')[0].substring(0, 5),
+          tags: event.tags || [] // Ensure tags are included
         });
         
         return acc;
@@ -306,8 +309,10 @@ const ChatBot = () => {
             
             2. Only suggest the user to create a new event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
             "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Color: #8CA7D6 | Description: description here | Tags: tag1,tag2]"
-
-            3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
+            
+            3. When suggesting tags for a new event, use relevant tags that appear in similar events from their existing schedule.
+            
+            4. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
             
             For example:
             "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Start: 14:00 | End: 15:00 | Color: #8CA7D6 | Description: Weekly team sync-up | Tags: work,meeting]"
@@ -386,9 +391,13 @@ const ChatBot = () => {
         
         sortedEvents.forEach(event => {
           if (eventCount >= maxEvents) return;
-          // Explicitly include the color in the event info
+          // Explicitly include the color and tags in the event info
           const colorInfo = event.color ? ` [color=${event.color}]` : '';
-          summary += `- ${event.time}: ${event.title}${colorInfo} (${event.location || 'No location'})`;
+          const tagInfo = event.tags && event.tags.length > 0 
+            ? ` [tags=${event.tags.map((tag: any) => tag.name).join(',')}]` 
+            : '';
+          
+          summary += `- ${event.time}: ${event.title}${colorInfo}${tagInfo} (${event.location || 'No location'})`;
           if (event.description) {
             summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
           }
@@ -607,7 +616,12 @@ const processEventSuggestions = (text: string): MessagePart[] => {
                         : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour duration
       
       // Process tags if available
-      const tags = suggestedEvent.tags || [];
+      const tagStrings = suggestedEvent.tags || [];
+      const tags = Array.isArray(tagStrings) 
+        ? tagStrings 
+        : typeof tagStrings === 'string'
+          ? tagStrings.split(',').map(tag => ({ name: tag.trim() }))
+          : [];
       
       // Prepare the event data according to the API expectations
       const eventData = {
