@@ -24,6 +24,7 @@ model User {
 
   events Event[]
   courses   Course[]
+  taskEstimate TaskEstimate[]
 }
 
 model Tag {
@@ -44,9 +45,35 @@ model Event {
   type String // Currently can be an EVENT or TASK.
   tags Tag[] // Tags for filtering
 
+  // New fields for tracking task completion
+  estimatedTime Int? // Estimated time in hours
+  difficulty Int? // Difficulty level (1-5)
+  completed Boolean @default(false)
+  task Boolean @default(false)
+
+  // Possible new fields for future update
   description String?
   endDate DateTime?
   reminder String? // Currently can be None, 5 minutes, 15 minutes, 30 minutes, 1 hour, 1 day, 1 week
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model TaskEstimate {
+  id String @id @default(uuid())
+  userId String @unique
+
+  multiplier1 Decimal @default(1.0)
+  multiplier2 Decimal @default(1.0)
+  multiplier3 Decimal @default(1.0)
+  multiplier4 Decimal @default(1.0)
+  multiplier5 Decimal @default(1.0)
+
+  divider1 Int @default(0)
+  divider2 Int @default(0)
+  divider3 Int @default(0)
+  divider4 Int @default(0)
+  divider5 Int @default(0)
 
   user User @relation(fields: [userId], references: [id])
 }

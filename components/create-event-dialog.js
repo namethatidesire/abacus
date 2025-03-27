@@ -21,7 +21,11 @@ export default function CreateEventDialog(props) {
         description: '',
         recurring: 'None',
         reminder: 'None',
-        tags: []
+        tags: [],
+        difficulty: null,
+        estimatedTime: null,
+        task: false,
+        completed: false
     });
 
     React.useEffect(() => {
@@ -54,6 +58,10 @@ export default function CreateEventDialog(props) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
+            estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
+            difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
+            task: eventData.task,
+            completed: eventData.completed
         };
 
         try {

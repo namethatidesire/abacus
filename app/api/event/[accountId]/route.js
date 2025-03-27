@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // create event
 export async function POST(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, endDate, type, tags, reminder } = await request.json();
+    const { id, userId, title, date, recurring, color, type, tags, description, task, estimatedTime, difficulty, endDate, reminder } = await request.json();
     const event = await prisma.event.create({
       data: {
         id,
@@ -24,6 +24,9 @@ export async function POST(request) {
           }))
         },
         description,
+        task,
+        estimatedTime, // Add estimatedTime estimatedTime, // Add estimatedTime
+        difficulty, // Add difficulty difficulty // Add difficulty
         endDate,
         reminder
       }
@@ -39,7 +42,7 @@ export async function POST(request) {
 // update event
 export async function PUT(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags, reminder } = await request.json();
+    const {id, userId, title, date, recurring, color, type, tags, description, task, completed, estimatedTime, difficulty, endDate, reminder } = await request.json();
     const event = await prisma.event.update({
       where: {
         id
@@ -61,8 +64,11 @@ export async function PUT(request) {
           }))
         },
         description,
-        start,
-        end,
+        endDate,
+        task,
+        completed,
+        estimatedTime, // Add estimatedTime    estimatedTime, // Add estimatedTime
+        difficulty, // Add difficulty
         reminder
       }
     });
@@ -87,7 +93,7 @@ export async function GET(request, { params }) {
 		});
 
 		return NextResponse.json(events, { status: 200 });
-	} catch (error) {
+} catch (error) {
 		console.error(error.stack);
 		return NextResponse.json({ message: "An error occurred" }, { status: 500 });
 	}

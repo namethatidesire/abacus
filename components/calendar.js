@@ -4,7 +4,7 @@ import { Crimson_Pro } from 'next/font/google';
 import CalendarDays from './calendar-days.js';
 import WeeklyView from './weekly-view.js';
 import Navbar from './navbar.js';
-import { Typography } from "@mui/material";
+import { Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Slider, Checkbox } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import './style.css';
 import CreateEventDialog from "./create-event-dialog";
@@ -31,6 +31,8 @@ export default class Calendar extends Component {
             events: {},
             accountId: null,
             view: 'month', // 'month' or 'week'
+            isSliderEnabled: false, // Add state for slider enabled/disabled
+            isEstimatedTimeEnabled: false, // Add state for estimated time enabled/disabled
             highlightedEventId: null,
             showCreateDialog: false,
             selectedDate: null,
@@ -182,6 +184,75 @@ export default class Calendar extends Component {
         const currentDay = Math.min(this.state.currentDay.getDate(), maxDay);
         this.setState({ currentDay: new Date(chgYear, prevMonth, currentDay) });
     }
+    
+    // Function to handle event click
+    handleEventClick = (event) => {
+        this.setState({ selectedEvent: event, dialogOpen: true });
+    }
+
+    // Function to close the dialog
+    handleCloseDialog = () => {
+        this.setState({ dialogOpen: false, selectedEvent: null});
+    }
+
+    // Function to handle input changes
+    handleInputChange = (e) => {
+        const { name, value } = e.target;
+        this.setState(prevState => ({
+            selectedEvent: {
+                ...prevState.selectedEvent,
+                [name]: name === 'estimatedTime' ? Math.max(0, value) : value // Ensure estimatedTime is 0 or greater
+            }
+        }));
+    }
+
+    // Function to handle slider change
+    handleSliderChange = (e, newValue) => {
+        this.setState(prevState => ({
+            selectedEvent: {
+                ...prevState.selectedEvent,
+                difficulty: newValue
+            }
+        }));
+    }
+
+    // Function to enable the slider and estimated time input
+    toggleSliderAndEstimatedTime = () => {
+        this.setState(prevState => ({
+            isSliderEnabled: !prevState.isSliderEnabled,
+            isEstimatedTimeEnabled: !prevState.isEstimatedTimeEnabled
+        }));
+    }
+
+    // Function to save the updated event
+    handleSaveEvent = async () => {
+        const { selectedEvent, accountId } = this.state;
+        
+        // Ensure the date is correctly formatted as a DateTime object
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const newDate = new Date(selectedEvent.date);
+        selectedEvent.date = new Date(newDate.toLocaleDateString('en-US', { timeZone: userTimezone })).toISOString();
+        selectedEvent.estimatedTime = parseInt(selectedEvent.estimatedTime);
+
+        try {
+            const response = await fetch(`/api/event/${accountId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(selectedEvent),
+            });
+
+            if (response.ok) {
+                this.fetchEvents();
+                this.handleCloseDialog();
+            } else {
+                console.error('Failed to update event:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error updating event:', error);
+        }
+    }
 
     handleEventClick = (event) => {
         if (event) {
@@ -203,7 +274,7 @@ export default class Calendar extends Component {
     };
 
     render() {
-        const { view, currentDay, events } = this.state;
+        const { view, currentDay, events, selectedEvent, dialogOpen, isSliderEnabled, isEstimatedTimeEnabled } = this.state;
         
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -326,7 +397,148 @@ export default class Calendar extends Component {
                             )}
                         </div>
                     </div>
+            </div>
+            {/* Event Details Dialog */}
+            <Dialog open={dialogOpen} onClose={this.handleCloseDialog}>
+            <DialogTitle>
+            Event Details
+            {selectedEvent && (
+                <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                <Typography variant="body2" component="label">
+                Mark as Complete
+                <Checkbox
+                checked={selectedEvent.completed}
+                onChange={() => this.setState(prevState => ({
+                    selectedEvent: {
+                    ...prevState.selectedEvent,
+                    completed: !prevState.selectedEvent.completed
+                    }
+                }))}
+                />
+                </Typography>
                 </div>
+            )}
+            </DialogTitle>
+            <DialogContent>
+            {selectedEvent && (
+                <>
+                <TextField
+                margin="dense"
+                id="title"
+                name="title"
+                label="Title"
+                type="text"
+                fullWidth
+                variant="standard"
+                value={selectedEvent.title}
+                onChange={this.handleInputChange}
+                />
+                <TextField
+                margin="dense"
+                id="date"
+                name="date"
+                label="Date"
+                type="date"
+                fullWidth
+                variant="standard"
+                value={selectedEvent.date}
+                onChange={this.handleInputChange}
+                />
+                <TextField
+                margin="dense"
+                id="time"
+                name="time"
+                label="Time"
+                type="time"
+                fullWidth
+                variant="standard"
+                value={selectedEvent.time}
+                onChange={this.handleInputChange}
+                />
+                <TextField
+                margin="dense"
+                id="color"
+                name="color"
+                label="Color"
+                type="text"
+                fullWidth
+                variant="standard"
+                value={selectedEvent.color}
+                onChange={this.handleInputChange}
+                />
+                <Button onClick={this.toggleSliderAndEstimatedTime}>
+                {isSliderEnabled && isEstimatedTimeEnabled ? 'Disable' : 'Enable'} Slider and Estimated Time
+                </Button>
+                
+                {isSliderEnabled && (
+                <>
+                <Typography gutterBottom>
+                    Difficulty
+                </Typography>
+                <Slider
+                    value={selectedEvent.difficulty}
+                    onChange={this.handleSliderChange}
+                    aria-labelledby="difficulty-slider"
+                    valueLabelDisplay="auto"
+                    step={1}
+                    marks={[
+                    { value: 1, label: 'Easy' },
+                    { value: 3, label: 'Medium' },
+                    { value: 5, label: 'Hard' }
+                    ]}
+                    min={1}
+                    max={5}
+                />
+                </>
+                )}
+                {isEstimatedTimeEnabled && (
+                <>
+                <TextField
+                    margin="dense"
+                    id="estimatedTime"
+                    name="estimatedTime"
+                    label="Estimated Time (hours)"
+                    type="number"
+                    fullWidth
+                    variant="standard"
+                    value={selectedEvent.estimatedTime}
+                    onChange={this.handleInputChange}
+                    inputProps={{ min: 0 }} // Ensure estimatedTime is 0 or greater
+                />
+                <Typography gutterBottom>
+                    Estimated Completion Time: {selectedEvent.estimatedTime * selectedEvent.difficulty} hours
+                </Typography>
+                </>
+                )}
+                {isSliderEnabled && selectedEvent.completed && (
+                <Button onClick={() => this.setState(prevState => ({
+                isCompletionTimeEnabled: !prevState.isCompletionTimeEnabled
+                }))}>
+                {this.state.isCompletionTimeEnabled ? 'Disable' : 'Enable'} Completion Time
+                </Button>
+                )}
+                {this.state.isCompletionTimeEnabled && selectedEvent.completed && (
+                <TextField
+                margin="dense"
+                id="completionTime"
+                name="completionTime"
+                label="Completion Time (hours)"
+                type="number"
+                fullWidth
+                variant="standard"
+                value={selectedEvent.completionTime || ''}
+                onChange={this.handleInputChange}
+                inputProps={{ min: 0 }} // Ensure completionTime is 0 or greater
+                />
+                )}
+                </>
+            )}
+            </DialogContent>
+            <DialogActions>
+            <Button onClick={this.handleCloseDialog}>Cancel</Button>
+            <Button onClick={this.handleSaveEvent}>Save</Button>
+            </DialogActions>
+            </Dialog>
             </div>
         );
     }

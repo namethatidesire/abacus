@@ -85,6 +85,11 @@ export default function ShowEventDialog({
                         <Typography>{"to " + dayjs(event.endDate).format('dddd, MMM. D, YYYY h:mm A')}</Typography>}
                     {event.reminder !== "None" && <Typography>Reminder {event.reminder} before</Typography>}
                     {event.description && <Typography>Description: {event.description}</Typography>}
+                    {event.task && (
+                        <Typography sx={{ fontSize: '1.2em', fontWeight: 'bold', color: event.completed ? 'green' : 'red' }}>
+                            {event.completed ? "Task complete!✅" : "Task in progress..."}
+                        </Typography>
+                    )}
 
                     <div style={{ marginTop: 10 }}>
                         {event.tags.map((tag, index) => (

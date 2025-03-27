@@ -28,9 +28,21 @@ export async function POST(request) {
         password: hashPassword(password),
       },
       select: {
+        id: true,
         username: true,
         email: true,
       },
+    });
+
+    // Create a new taskEstimate object
+    await fetch('http://localhost:3000/api/taskEstimate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: newUser.id,
+      }),
     });
 
     return NextResponse.json(newUser, { status: 201 });
