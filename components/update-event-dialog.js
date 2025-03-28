@@ -10,7 +10,7 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
         title: event.title,
         userId: accountId,
         color: event.color,
-        startDateTime: dayjs(event.date + event.time),
+        startDateTime: dayjs(event.date + event.time).subtract(1, 'day'),
         endDateTime: dayjs(event.endDate),
         description: event.description,
         recurring: event.recurring,

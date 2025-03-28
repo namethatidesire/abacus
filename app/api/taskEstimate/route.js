@@ -19,13 +19,10 @@ export async function POST(request) {
                 divider3: 0,
                 divider4: 0,
                 divider5: 0,
-                user: {
-                    connect: { id: userId } // Ensure the user is connected correctly
-                }
             }
         });
 
-        return taskEstimate;
+        return NextResponse.json({ taskEstimate }, { status: 201 });
     } catch (error) {
         console.error('Error creating task estimate for new user:', error);
         throw error;

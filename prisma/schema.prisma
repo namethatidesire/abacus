@@ -25,6 +25,7 @@ model User {
   events Event[]
   courses   Course[]
   taskEstimate TaskEstimate[]
+  calendars Calendar[]
 }
 
 model Tag {
@@ -38,6 +39,7 @@ model Tag {
 model Event {
   id String @id @default(uuid())
   userId String
+  calendarId String
   title String
   date DateTime @default(now())
   recurring String? // Currently can be Daily, Weekly, Monthly, Yearly
@@ -57,6 +59,7 @@ model Event {
   reminder String? // Currently can be None, 5 minutes, 15 minutes, 30 minutes, 1 hour, 1 day, 1 week
 
   user User @relation(fields: [userId], references: [id])
+  calendar Calendar @relation(fields: [calendarId], references: [id])
 }
 
 model TaskEstimate {
@@ -76,6 +79,18 @@ model TaskEstimate {
   divider5 Int @default(0)
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Calendar {
+  id String @id @default(uuid())
+  ownerId String
+  name String @default("CalendarName")
+  description String @default("No description.")
+  main Boolean @default(false)
+  shared Boolean @default(false)
+
+  events Event[]
+  users User[]
 }
 
 model Course {
