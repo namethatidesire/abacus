@@ -4,41 +4,37 @@ import { NextResponse } from 'next/server';
 	// Function to count user events by type
 export async function POST(request, { params }) {
 	try {
-	    const {userId, eventType} = await request.json();
+	    const {userId} = await request.json();
+        let completeEvents = await prisma.event.count({
+            where:  {
+                userId: userId,
+                type: "EVENT",
+                completion: true,
+           },
+        });
+        let incompleteEvents = await prisma.event.count({
+              where:  {
+                  userId: userId,
+                  type: "EVENT",
+                  completion: false,
+              },
+        });
+        let completeTasks = await prisma.event.count({
+              where:  {
+                  userId: userId,
+                  type: "TASK",
+                  completion: true,
+              },
+        });
+        let incompleteTasks = await prisma.event.count({
+               where:  {
+                   userId: userId,
+                   type: "TASK",
+                   completion: false,
+               },
+         });
 
-		let eventCounts;
-		eventCounts = await prisma.event.count({
-			select: {
-                completeEvents: {
-                    where:  {
-                    	userId: userId,
-                    	type: "EVENT",
-                    	complete: true,
-                    },
-                },
-                incompleteEvents: {
-                    where:  {
-                    	userId: userId,
-                    	type: "EVENT",
-                    	complete: false,
-                    },
-                },
-                completeTasks: {
-                    where:  {
-                    	userId: userId,
-                    	type: "TASK",
-                    	complete: true,
-                    },
-                },
-                incompleteTasks: {
-                    where:  {
-                    	userId: userId,
-                    	type: "TASK",
-                    	complete: false,
-                    },
-                },
-			},
-		});
+        const eventCounts = {completeEvents: completeEvents, incompleteEvents: incompleteEvents, completeTasks: completeTasks, incompleteTasks: incompleteTasks};
 		return NextResponse.json(eventCounts, { status: 200 });
 	} catch (error) {
 	    console.log(error);
