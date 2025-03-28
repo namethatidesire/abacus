@@ -50,7 +50,7 @@ export default function RenderProgressBar(accountId) {
         taskProgress = 1.0 * eventCounts.completeTasks / tasks;
     }
     if (events || tasks) {
-        overallProgress = 1.0 * (eventCounts.incompleteEvents + eventCounts.incompleteTasks) / (events + tasks);
+        overallProgress = 1.0 * (eventCounts.completeEvents + eventCounts.completeTasks) / (events + tasks);
     }
 
     return (

@@ -9,28 +9,28 @@ export async function POST(request, { params }) {
             where:  {
                 userId: userId,
                 type: "EVENT",
-                completion: true,
+                completed: true,
            },
         });
         let incompleteEvents = await prisma.event.count({
               where:  {
                   userId: userId,
                   type: "EVENT",
-                  completion: false,
+                  completed: false,
               },
         });
         let completeTasks = await prisma.event.count({
               where:  {
                   userId: userId,
                   type: "TASK",
-                  completion: true,
+                  completed: true,
               },
         });
         let incompleteTasks = await prisma.event.count({
                where:  {
                    userId: userId,
                    type: "TASK",
-                   completion: false,
+                   completed: false,
                },
          });
 
