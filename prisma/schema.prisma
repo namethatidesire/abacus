@@ -45,6 +45,7 @@ model Event {
   recurring String? // Currently can be Daily, Weekly, Monthly, Yearly
   color String
   type String // Currently can be an EVENT or TASK.
+  completion Boolean? @default(false)
   tags Tag[] // Tags for filtering
 
   // New fields for tracking task completion

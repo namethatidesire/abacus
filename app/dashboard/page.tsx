@@ -1,17 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Navbar from '@/components/navbar.js';
-import { Typography, Container, Box, Paper, CircularProgress } from '@mui/material';
-import { Crimson_Pro } from 'next/font/google';
-import ShowEventDialog from '@/components/show-event-dialog';
-import { startOfDay, format } from 'date-fns';
+import Navbar from '../../components/navbar.js'; 
+// import eventServiceConfig from '../../configs/eventservice.json';
+import RenderProgressBar from '../../components/progressbar.js';
 
-// Initialize Crimson Pro font
-const crimsonPro = Crimson_Pro({
-    subsets: ['latin'],
-    weight: ['400', '500', '600'],
-});
 
 const Dashboard = () => {
     const [userId, setUserId] = useState(null);
@@ -149,87 +142,46 @@ const Dashboard = () => {
                     </Typography>
                 </Box>
 
-                <Paper 
-                    elevation={0}
-                    sx={{ 
-                        p: 4,
-                        borderRadius: 2,
-                        border: '1px solid #E5E5E5',
-                        backgroundColor: 'white'
-                    }}
-                >
-                    <Typography 
-                        variant="h5" 
-                        sx={{ 
-                            fontFamily: crimsonPro.style.fontFamily,
-                            fontWeight: 500,
-                            mb: 3
-                        }}
-                    >
-                        Today's Events
-                    </Typography>
-                    
-                    {events.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {events.map(event => (
-                                <ShowEventDialog 
-                                    key={event.id}
-                                    event={event}
-                                    accountId={userId}
-                                    updateCallback={() => fetchData()}
-                                >
-                                    <Box 
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 1,
-                                            backgroundColor: event.color || '#8CA7D6',
-                                            color: 'white',
-                                            cursor: 'pointer',
-                                            '&:hover': {
-                                                opacity: 0.9,
-                                                transform: 'scale(1.01)',
-                                                transition: 'all 0.2s ease-in-out'
-                                            }
-                                        }}
-                                    >
-                                        <Typography 
-                                            sx={{ 
-                                                fontFamily: crimsonPro.style.fontFamily,
-                                                fontSize: '0.9rem'
-                                            }}
-                                        >
-                                            {new Date(event.date).toLocaleTimeString([], { 
-                                                hour: '2-digit', 
-                                                minute: '2-digit' 
-                                            })}
-                                        </Typography>
-                                        <Typography 
-                                            sx={{ 
-                                                fontFamily: crimsonPro.style.fontFamily,
-                                                fontWeight: 500
-                                            }}
-                                        >
-                                            {event.title}
-                                        </Typography>
-                                    </Box>
-                                </ShowEventDialog>
-                            ))}
-                        </Box>
-                    ) : (
-                        <Typography 
-                            sx={{ 
-                                fontFamily: crimsonPro.style.fontFamily,
-                                color: '#666',
-                                fontStyle: 'italic'
-                            }}
-                        >
-                            No events planned for today.
-                        </Typography>
-                    )}
-                </Paper>
-            </Container>
-        </Box>
-    );
+  return (
+    <div>
+      <div>
+        <Navbar />
+        {/* Other content can go here */}
+      </div>
+      <div style={{ 
+        width: '33%', 
+        backgroundColor: '#d3d3d3', 
+        padding: '20px', 
+        height: '100vh',
+        color: '#333' // Dark gray color
+      }}>
+        <p style={{ fontSize: '3em', margin: '20px 0 0 0' }}>Dashboard</p>
+        <p style={{ fontSize: '2em'}}>Welcome, {username}.</p>
+        <p style={{ fontSize: '1em', margin: '0 0 20px 0' }}>{today}</p> 
+        <div style={{ 
+          backgroundColor: '#f0f0f0', 
+          borderRadius: '10px', 
+          padding: '10px',
+        }}>
+          <h2>Today's Events</h2>
+          {events.length > 0 ? (
+            <ul>
+              {events.map(event => (
+                <li key={event.id}>
+                  [{new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}] - {event.title}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No events planned for today.</p>
+          )}
+          <div>
+            <RenderProgressBar />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;
