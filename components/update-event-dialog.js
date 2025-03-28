@@ -16,7 +16,8 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
         recurring: event.recurring,
         reminder: event.reminder || 'None',
         tags: event.tags,
-        estimatedTime: event.estimatedTime !== null ? parseInt(event.estimatedTime) : null,
+        expectedTime: event.expectedTime !== null ? parseInt(event.expectedTime) : null,
+        completionTime: event.completionTime !== null ? parseInt(event.completionTime) : null,
         difficulty: event.difficulty !== null ? event.difficulty : null,
         task: event.task,
         completed: event.completed
@@ -36,11 +37,13 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
-            estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
+            expectedTime: eventData.expectedTime !== null ? parseInt(eventData.expectedTime) : null,
+            completionTime: eventData.completionTime !== null ? parseInt(eventData.completionTime) : null,
             difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
             task: eventData.task,
             completed: eventData.completed
         };
+        console.log(updatedEvent)
         try {
             const response = await fetch(`api/event/${accountId}`, {
                 method: 'PUT',

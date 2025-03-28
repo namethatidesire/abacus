@@ -137,7 +137,6 @@ export default class Calendar extends Component {
             });
             if (getEvents.ok) {
                 const data = (await getEvents.json()).events;
-                console.log(data);
                 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const events = Array.isArray(data) ? data.reduce((acc, event) => {
                     const eventDate = new Date(event.date);

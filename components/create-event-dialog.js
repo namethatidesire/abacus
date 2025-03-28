@@ -16,6 +16,7 @@ export default function CreateEventDialog(props) {
     
     const [eventData, setEventData] = React.useState({
         title: '',
+        userId: accountId,
         color: '#FF0000',
         startDateTime: props.selectedDate ? dayjs(props.selectedDate) : dayjs(),
         endDateTime: props.selectedDate ? dayjs(props.selectedDate).add(1, 'hour') : dayjs().add(1, 'hour'),
@@ -24,7 +25,8 @@ export default function CreateEventDialog(props) {
         reminder: 'None',
         tags: [],
         difficulty: null,
-        estimatedTime: null,
+        expectedTime: null,
+        completionTime: null,
         task: false,
         completed: false
     });
@@ -32,6 +34,7 @@ export default function CreateEventDialog(props) {
     const resetEventData = () => {
         setEventData({
             title: '',
+            userId: accountId,
             color: '#FF0000',
             startDateTime: dayjs(),
             endDateTime: dayjs().add(1, 'hour'),
@@ -40,7 +43,8 @@ export default function CreateEventDialog(props) {
             reminder: 'None',
             tags: [],
             difficulty: null,
-            estimatedTime: null,
+            expectedTime: null,
+            completionTime: null,
             task: false,
             completed: false
         });
@@ -78,7 +82,8 @@ export default function CreateEventDialog(props) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
-            estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
+            expectedTime: eventData.expectedTime !== null ? parseInt(eventData.expectedTime) : null,
+            completionTime: eventData.completionTime !== null ? parseInt(eventData.completionTime) : null,
             difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
             task: eventData.task,
             completed: eventData.completed

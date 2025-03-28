@@ -22,17 +22,31 @@ import dayjs from "dayjs";
 import Tags from "./tags";
 
 export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData, onSubmit, submitButtonText }) => {
-    const [showExtraFields, setShowExtraFields] = useState(false);
-    const [showActualTimeField, setShowActualTimeField] = useState(false);
+    const [showExtraFields, setShowExtraFields] = useState(eventData.task);
+    const [showCompletionTimeField, setShowCompletionTimeField] = useState(eventData.completed);
     const [estimatedTime, setEstimatedTime] = useState(null);
 
     useEffect(() => {
         if (open) {
-            setShowExtraFields(false);
-            setShowActualTimeField(false);
+            console.log(eventData);
+            if (eventData.task) {
+                setShowExtraFields(eventData.task);
+                if (eventData.completed){
+                    setShowCompletionTimeField(eventData.completed);
+                }else{
+                    setShowCompletionTimeField(false)
+                }
+            }else{
+                setShowExtraFields(false);
+                setShowCompletionTimeField(false);
+            }
+            updateEstimatedTime();
+        }else{
             setEstimatedTime(null);
+            setShowExtraFields(false);
+            setShowCompletionTimeField(false);
         }
-    }, [open]);
+    }, [open]);    
 
     const handleTagsChange = (tags) => {
         const realTags = tags.map(tag =>
@@ -45,8 +59,8 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
         setShowExtraFields(prev => !prev);
     };
 
-    const toggleActualTimeField = () => {
-        setShowActualTimeField(prev => !prev);
+    const toggleCompletionTimeField = () => {
+        setShowCompletionTimeField(prev => !prev);
     };
 
     const calculateEstimatedTime = async (expectedTime, difficulty, accountId) => {
@@ -76,6 +90,7 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
     };
 
     const hoursAndMinutes = (time) => {
+        if (time === null || time === undefined) return "Calculating...";
         const hours = Math.floor(time);
         const minutes = Math.round((time - hours) * 60);
         return `${hours}hours ${minutes}minutes`;
@@ -93,15 +108,15 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
 
     const handleNumberInputChange = (e, field) => {
         const value = e.target.value;
-        if (value >= 0) {
+        if (value > 0) {
             setEventData(prev => ({ ...prev, [field]: value }));
         }
     };
 
     const handleTaskCompletion = async () => {
-        if (showActualTimeField && eventData.actualTime > 0) {
+        if (showCompletionTimeField && eventData.ompletionTime > 0) {
             try {
-                const newRatio = (parseFloat(eventData.actualTime) / parseFloat(eventData.expectedTime)).toFixed(2);
+                const newRatio = (parseFloat(eventData.ompletionTime) / parseFloat(eventData.expectedTime)).toFixed(2);
                 const response = await fetch(`/api/taskEstimate/${eventData.userId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -121,9 +136,9 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
     };
 
     const handleSubmit = async () => {
-        if(showExtraFields){
+        if(showExtraFields && eventData.expectedTime > 0){
             eventData.task = true;
-            if(showActualTimeField){
+            if(showCompletionTimeField && eventData.completionTime > 0){
                 eventData.completed = true;
             }else{
                 eventData.completed = false;
@@ -136,34 +151,35 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
         await handleTaskCompletion();
         onSubmit();
     };
+    
+    const updateEstimatedTime = async () => {
+        if (eventData.expectedTime && eventData.difficulty && eventData.userId) {
+            const estimatedTime = await calculateEstimatedTime(eventData.expectedTime, eventData.difficulty, eventData.userId);
+            setEstimatedTime(estimatedTime);
+        }
+    };
 
     useEffect(() => {
-        const updateEstimatedTime = async () => {
-            if (eventData.expectedTime && eventData.difficulty && eventData.userId) {
-                const estimatedTime = await calculateEstimatedTime(eventData.expectedTime, eventData.difficulty, eventData.userId);
-                setEstimatedTime(estimatedTime);
-            }
-        };
         updateEstimatedTime();
     }, [eventData.expectedTime, eventData.difficulty]);
 
     useEffect(() => {
-        if (open) {
-            const savedShowExtraFields = localStorage.getItem('showExtraFields') === 'true';
-            const savedShowActualTimeField = localStorage.getItem('showActualTimeField') === 'true';
-            setShowExtraFields(savedShowExtraFields);
-            setShowActualTimeField(savedShowActualTimeField);
-            setEstimatedTime(null);
+        if (eventData.task) {
+            setEventData(prev => ({ ...prev, difficulty: eventData.difficulty || 3 }));
+            setEventData(prev => ({ ...prev, expectedTime: eventData.expectedTime || undefined }));
+        }else{
+            setEventData(prev => ({ ...prev, difficulty: null }));
+            setEventData(prev => ({ ...prev, expectedTime: null }));
         }
-    }, [open]);
-
-    useEffect(() => {
-        localStorage.setItem('showExtraFields', showExtraFields);
     }, [showExtraFields]);
 
     useEffect(() => {
-        localStorage.setItem('showActualTimeField', showActualTimeField);
-    }, [showActualTimeField]);
+        if (eventData.completed) {
+            setEventData(prev => ({ ...prev, completionTime: eventData.completionTime || undefined }));
+        }else{
+            setEventData(prev => ({ ...prev, completionTime: null }));
+        }
+    }, [showCompletionTimeField]);
 
     return (
         <Dialog open={open} onClose={onClose}>
@@ -253,11 +269,11 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                             />
                         </div>
                         <TextField
-                            label="Expected Time to Complete (hours)"
+                            label={"Expected Time to Complete (hours)"}
                             margin="dense"
                             type="number"
                             fullWidth
-                            value={eventData.expectedTime || ''}
+                            value={eventData.expectedTime}
                             onChange={(e) => handleNumberInputChange(e, 'expectedTime')}
                         />
                         <DialogContentText
@@ -270,17 +286,17 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                             Estimated Time to Complete: {hoursAndMinutes(estimatedTime)}
                         </DialogContentText>
                         <FormControlLabel
-                            control={<Checkbox checked={showActualTimeField} onChange={toggleActualTimeField} />}
+                            control={<Checkbox checked={showCompletionTimeField} onChange={toggleCompletionTimeField} />}
                             label="Task Complete"
                         />
-                        {showActualTimeField && (
+                        {showCompletionTimeField && (
                             <TextField
                                 label="Completion Time (hours)"
                                 margin="dense"
                                 type="number"
                                 fullWidth
-                                value={eventData.actualTime || ''}
-                                onChange={(e) => handleNumberInputChange(e, 'actualTime')}
+                                value={eventData.completionTime}
+                                onChange={(e) => handleNumberInputChange(e, 'completionTime')}
                             />
                         )}
                     </div>
