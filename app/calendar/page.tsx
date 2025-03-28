@@ -56,8 +56,6 @@ const CalendarPage = () => {
           body: JSON.stringify({ accountId: userId, query: "default" })
         });
         const defaultCalendar = await getDefaultCalendar.json();
-        console.log(defaultCalendar);
-        console.log(defaultCalendar.id);
         if (defaultCalendar) {
           // redirect to the default calendar page
           setCalendarId(defaultCalendar.id);

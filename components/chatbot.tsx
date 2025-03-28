@@ -40,6 +40,7 @@ const ChatBot = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [calendarId, setCalendarId] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState({});
   const [eventMap, setEventMap] = useState(new Map());
@@ -168,6 +169,31 @@ const ChatBot = () => {
     initializeAssistant();
   }, []);
 
+  useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: userId, query: "default" })
+          });
+          const defaultCalendar = await getDefaultCalendar.json();
+          if (defaultCalendar) {
+            // redirect to the default calendar page
+            setCalendarId(defaultCalendar.id);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          window.location.href = '/login'; // Redirect to login page
+        }
+      };
+  
+      if (userId) {
+        fetchData();
+  
+      }
+    }, [userId]);
+
   // Build a map of event titles to event data for easy lookup
   const buildEventMap = (eventsData: { [dateKey: string]: Event[] }) => {
     const map = new Map();
@@ -274,6 +300,8 @@ const ChatBot = () => {
       
       const eventSummary = formatEventSummary(userEvents || events);
       
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const todayInUserTz = new Date().toLocaleDateString('en-US', { timeZone: userTimezone });
       const response = await fetch('http://localhost:3000/api/chatbot', {
         method: 'POST',
         headers: {
@@ -303,7 +331,7 @@ const ChatBot = () => {
             
             3. When suggesting tags for a new event, use relevant tags that appear in similar events from their existing schedule.
             
-            4. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
+            4. Today's date is ${todayInUserTz}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
             
             For example:
             "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Start: 14:00 | End: 15:00 | Color: #8CA7D6 | Description: Weekly team sync-up | Tags: work,meeting]"
@@ -617,6 +645,7 @@ const processEventSuggestions = (text: string): MessagePart[] => {
       // Prepare the event data according to the API expectations
       const eventData = {
         userId: userId,
+        calendarId: calendarId,
         title: suggestedEvent.title,
         date: startDateTime.toISOString(),
         time: startTime,
