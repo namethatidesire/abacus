@@ -40,6 +40,7 @@ const ChatBot = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [calendarId, setCalendarId] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState({});
   const [eventMap, setEventMap] = useState(new Map());
@@ -84,6 +85,7 @@ const ChatBot = () => {
   }
 
   interface Event {
+    tags: never[];
     id: string;
     title: string;
     date: string;
@@ -167,6 +169,31 @@ const ChatBot = () => {
     initializeAssistant();
   }, []);
 
+  useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: userId, query: "default" })
+          });
+          const defaultCalendar = await getDefaultCalendar.json();
+          if (defaultCalendar) {
+            // redirect to the default calendar page
+            setCalendarId(defaultCalendar.id);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          window.location.href = '/login'; // Redirect to login page
+        }
+      };
+  
+      if (userId) {
+        fetchData();
+  
+      }
+    }, [userId]);
+
   // Build a map of event titles to event data for easy lookup
   const buildEventMap = (eventsData: { [dateKey: string]: Event[] }) => {
     const map = new Map();
@@ -179,6 +206,8 @@ const ChatBot = () => {
           title: event.title,
           date: event.date,
           time: event.time,
+          // Store tags if available
+          tags: event.tags || [],
           // Use the event's color or generate a random one
           color: event.color || getRandomEventColor(event.title)
         });
@@ -218,40 +247,31 @@ const ChatBot = () => {
         throw new Error('User ID not available');
       }
 
-      const response = await fetch(`/api/event/${effectiveUserId}`, {
+      const getEvents = await fetch(`/api/event/${effectiveUserId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+    if (getEvents.ok) {
+        const data = (await getEvents.json()).events || [];
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const processedEvents = Array.isArray(data) ? data.reduce((acc, event) => {
+            const eventDate = new Date(event.date);
+            const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
+            const dateKey = localDate.toDateString();
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push({
+                ...event,
+                date: localDate.toISOString().split('T')[0],
+                time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+            });
+            return acc;
+        }, {}) : {};
+        return processedEvents;
       }
-
-      const events = await response.json();
-      
-      // Process events similar to Calendar.js
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; }) => {
-        const eventDate = new Date(event.date);
-        const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
-        const dateKey = localDate.toDateString();
-        
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        
-        acc[dateKey].push({
-          ...event,
-          date: localDate.toISOString().split('T')[0],
-          time: localDate.toTimeString().split(' ')[0].substring(0, 5)
-        });
-        
-        return acc;
-      }, {});
-      
-      return processedEvents;
     } catch (error) {
       console.error('Error fetching events:', error);
       // Don't set an error state here, just return null
@@ -280,6 +300,8 @@ const ChatBot = () => {
       
       const eventSummary = formatEventSummary(userEvents || events);
       
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const todayInUserTz = new Date().toLocaleDateString('en-US', { timeZone: userTimezone });
       const response = await fetch('http://localhost:3000/api/chatbot', {
         method: 'POST',
         headers: {
@@ -306,8 +328,10 @@ const ChatBot = () => {
             
             2. Only suggest the user to create a new event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
             "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Color: #8CA7D6 | Description: description here | Tags: tag1,tag2]"
-
-            3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
+            
+            3. When suggesting tags for a new event, use relevant tags that appear in similar events from their existing schedule.
+            
+            4. Today's date is ${todayInUserTz}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
             
             For example:
             "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Start: 14:00 | End: 15:00 | Color: #8CA7D6 | Description: Weekly team sync-up | Tags: work,meeting]"
@@ -386,9 +410,13 @@ const ChatBot = () => {
         
         sortedEvents.forEach(event => {
           if (eventCount >= maxEvents) return;
-          // Explicitly include the color in the event info
+          // Explicitly include the color and tags in the event info
           const colorInfo = event.color ? ` [color=${event.color}]` : '';
-          summary += `- ${event.time}: ${event.title}${colorInfo} (${event.location || 'No location'})`;
+          const tagInfo = event.tags && event.tags.length > 0 
+            ? ` [tags=${event.tags.map((tag: any) => tag.name).join(',')}]` 
+            : '';
+          
+          summary += `- ${event.time}: ${event.title}${colorInfo}${tagInfo} (${event.location || 'No location'})`;
           if (event.description) {
             summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
           }
@@ -607,11 +635,17 @@ const processEventSuggestions = (text: string): MessagePart[] => {
                         : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour duration
       
       // Process tags if available
-      const tags = suggestedEvent.tags || [];
+      const tagStrings = suggestedEvent.tags || [];
+      const tags = Array.isArray(tagStrings) 
+        ? tagStrings 
+        : typeof tagStrings === 'string'
+          ? tagStrings.split(',').map(tag => ({ name: tag.trim() }))
+          : [];
       
       // Prepare the event data according to the API expectations
       const eventData = {
         userId: userId,
+        calendarId: calendarId,
         title: suggestedEvent.title,
         date: startDateTime.toISOString(),
         time: startTime,
@@ -765,16 +799,16 @@ const processEventSuggestions = (text: string): MessagePart[] => {
             return (
               <span
                 key={index}
-                className="relative block my-2 px-3 py-2 rounded border border-green-500 bg-green-50"
+                className="relative block my-2 px-3 py-2 rounded border border-[#7a96c4] bg-[#f0f4fb]"
               >
-                <div className="font-medium text-green-800 mb-1">Suggested Event:</div>
+                <div className="font-medium text-[#546d9d] mb-1">Suggested Event:</div>
                 <div className="text-gray-700 mb-2">
                   <strong>{part.suggestedEvent.title}</strong> on {part.suggestedEvent.date}
                 </div>
                 <div className="text-sm text-gray-600 mb-2">{part.suggestedEvent.description}</div>
                 <button
                   onClick={() => handleEventSuggestionClick(part.suggestedEvent)}
-                  className="text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50"
+                  className="text-white bg-[#7a96c4] hover:bg-[#6785b3] px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#8CA7D6] disabled:opacity-50"
                   disabled={isCreatingEvent}
                 >
                   {isCreatingEvent ? "Creating..." : "Add to Calendar"}
@@ -782,7 +816,7 @@ const processEventSuggestions = (text: string): MessagePart[] => {
               </span>
             );
           }
-          
+
           // For existing events (highlight only)
           return (
             <span

@@ -1,6 +1,7 @@
 import { prisma } from "@/utils/db";
 import { NextResponse } from "next/server";
 import { hashPassword } from "@/utils/auth";
+import { describe } from "node:test";
 
 // app/api/signup/route.js
 export async function POST(request) {
@@ -28,9 +29,38 @@ export async function POST(request) {
         password: hashPassword(password),
       },
       select: {
+        id: true,
         username: true,
         email: true,
       },
+    });
+
+    const newCalendar = await prisma.calendar.create({
+      data: {
+        ownerId: newUser.id,
+        name: "Personal",
+        description: "The default calendar.",
+        main: true,
+        shared: false,
+        users: {
+          connect: [
+            {
+              id: newUser.id,
+            },
+          ],
+        },
+      },
+    });
+
+    // Create a new taskEstimate object
+    await fetch('http://localhost:3000/api/taskEstimate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: newUser.id,
+      }),
     });
 
     return NextResponse.json(newUser, { status: 201 });

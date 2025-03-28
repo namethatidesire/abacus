@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Crimson_Pro } from 'next/font/google';
 import { Typography } from "@mui/material";
 import './calendar-days.css';
-import CreateEventDialog from './create-event-dialog';
 import ShowEventDialog from './show-event-dialog';
 
 // Initialize Crimson Pro font

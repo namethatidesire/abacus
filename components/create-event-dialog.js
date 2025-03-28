@@ -11,6 +11,7 @@ import { BaseEventDialog } from "./base-event-dialog";
 // selectedDate: date object for pre-populating the event date
 export default function CreateEventDialog(props) {
     const accountId = props.accountId;
+    const calendarId = props.calendarId;
     const open = props.open || false;
     
     const [eventData, setEventData] = React.useState({
@@ -21,8 +22,29 @@ export default function CreateEventDialog(props) {
         description: '',
         recurring: 'None',
         reminder: 'None',
-        tags: []
+        tags: [],
+        difficulty: null,
+        estimatedTime: null,
+        task: false,
+        completed: false
     });
+
+    const resetEventData = () => {
+        setEventData({
+            title: '',
+            color: '#FF0000',
+            startDateTime: dayjs(),
+            endDateTime: dayjs().add(1, 'hour'),
+            description: '',
+            recurring: 'None',
+            reminder: 'None',
+            tags: [],
+            difficulty: null,
+            estimatedTime: null,
+            task: false,
+            completed: false
+        });
+    }
 
     React.useEffect(() => {
         if (props.selectedDate) {
@@ -35,6 +57,7 @@ export default function CreateEventDialog(props) {
     }, [props.selectedDate]);
 
     const handleClose = () => {
+        resetEventData();
         if (props.onClose) {
             props.onClose();
         }
@@ -44,6 +67,7 @@ export default function CreateEventDialog(props) {
     const createEvent = async () => {
         const newEvent = {
             userId: accountId,
+            calendarId: calendarId,
             title: eventData.title,
             date: eventData.startDateTime.toISOString(),
             time: eventData.startDateTime.format('HH:mm'),
@@ -54,6 +78,10 @@ export default function CreateEventDialog(props) {
             type: "EVENT",
             reminder: eventData.reminder,
             tags: eventData.tags,
+            estimatedTime: eventData.estimatedTime !== null ? parseInt(eventData.estimatedTime) : null,
+            difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
+            task: eventData.task,
+            completed: eventData.completed
         };
 
         try {
