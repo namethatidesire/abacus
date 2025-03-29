@@ -246,6 +246,19 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                             <MenuItem value="1 week">1 week</MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControl margin="dense" sx={{ m: 1, minWidth: 120 }}>
+                        <InputLabel id="type-select-label">Type</InputLabel>
+                        <Select
+                            variant="outlined"
+                            label="Type"
+                            labelId="type-select-label"
+                            value={eventData.type}
+                            onChange={(e) => setEventData(prev => ({ ...prev, type: e.target.value }))}
+                        >
+                            <MenuItem value="TASK">Task</MenuItem>
+                            <MenuItem value="EVENT">Event</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Tags value={eventData.tags} onChange={handleTagsChange} />
                 </div>
                 <Button onClick={toggleExtraFields}>
