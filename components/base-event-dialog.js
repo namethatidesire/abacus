@@ -114,9 +114,9 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
     };
 
     const handleTaskCompletion = async () => {
-        if (showCompletionTimeField && eventData.ompletionTime > 0) {
+        if (showCompletionTimeField && eventData.completionTime > 0) {
             try {
-                const newRatio = (parseFloat(eventData.ompletionTime) / parseFloat(eventData.expectedTime)).toFixed(2);
+                const newRatio = (parseFloat(eventData.completionTime) / parseFloat(eventData.expectedTime)).toFixed(2);
                 const response = await fetch(`/api/taskEstimate/${eventData.userId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                             margin="dense"
                             type="number"
                             fullWidth
-                            value={eventData.expectedTime}
+                            value={eventData.expectedTime || ''}
                             onChange={(e) => handleNumberInputChange(e, 'expectedTime')}
                         />
                         <DialogContentText
@@ -295,7 +295,7 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
                                 margin="dense"
                                 type="number"
                                 fullWidth
-                                value={eventData.completionTime}
+                                value={eventData.completionTime || ''}
                                 onChange={(e) => handleNumberInputChange(e, 'completionTime')}
                             />
                         )}
