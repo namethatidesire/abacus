@@ -56,6 +56,7 @@ export async function PUT(request) {
         color,
         type,
         tags: {
+          set: [],
           connectOrCreate: tags.map(tag => ({
             where: { name: tag.name || tag },
             create: {
