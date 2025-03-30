@@ -43,7 +43,8 @@ const TodoList: React.FC<TodoListProps> = ({ tasks, newTask, setTasks, setNewTas
                     type="text"
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
-                    style={{ flex: '1', padding: '10px', fontSize: '1em' }}
+                    style={{ flex: '1', padding: '10px', border: "1px solid black", outline: 'none', color: 'black',  
+                        fontSize: '1em' }}
                 />
                 <button
                     onClick={addTask}
@@ -72,6 +73,7 @@ const TodoList: React.FC<TodoListProps> = ({ tasks, newTask, setTasks, setNewTas
                             padding: '10px',
                             marginBottom: '10px',
                             backgroundColor: '#f0f0f0',
+                            color: 'black', 
                             borderRadius: '5px',
                             textDecoration: task.completed ? 'line-through' : 'none'
                         }}

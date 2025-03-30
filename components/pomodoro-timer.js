@@ -67,10 +67,10 @@ const PomodoroTimer = () => {
 
     return (
         <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2em', margin: '20px 0' }}>
+            <div style={{ fontSize: '2em', margin: '20px 0', color: 'black' }}>
                 {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
             </div>
-            <div style={{ marginTop: '20px', fontSize: '1.2em', marginBottom: '10px' }}>   
+            <div style={{ marginTop: '20px', fontSize: '1.2em', marginBottom: '10px', color: 'black' }}>   
                 {isWorkMode ? 'Work Time' : 'Break Time'}
             </div>
             <button
