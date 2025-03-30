@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import { ca } from 'date-fns/locale';
 
 // Styled components
 const UploadBox = styled(Paper)(({ theme }) => ({
@@ -50,10 +51,71 @@ const SyllabusScanner = () => {
   const [events, setEvents] = useState(null);
   const [isAddingEvents, setIsAddingEvents] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
-  const [accountId, setAccountId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [calendarId, setCalendarId] = useState(null);
   const [courseName, setCourseName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#1976d2');
+  
+    useEffect(() => {
+      const fetchUserId = async () => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          alert('Missing token. Please log in again.');
+          window.location.href = '/login'; // Redirect to login page
+          return;
+        }
+  
+        try {
+          const response = await fetch(`api/account/authorize`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+  
+          const data = await response.json();
+          console.log(data);
+          if (data.status === 200) {
+            const { userId } = data.decoded;
+            setUserId(userId); // Set the user ID in state
+          } else {
+            alert('Invalid token. Please log in again.');
+            window.location.href = '/login'; // Redirect to login page
+          }
+        } catch (error) {
+          alert('Error verifying token. Please log in again.');
+          window.location.href = '/login'; // Redirect to login page
+        }
+      };
+  
+      fetchUserId();
+    }, []);
+  
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: userId, query: "default" })
+          });
+          const defaultCalendar = await getDefaultCalendar.json();
+          if (defaultCalendar) {
+            // redirect to the default calendar page
+            setCalendarId(defaultCalendar.id);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          window.location.href = '/login'; // Redirect to login page
+        }
+      };
+  
+      if (userId) {
+        fetchData();
+  
+      }
+    }, [userId]);
   
   // Predefined Material-UI colors
   const colors = {
@@ -129,42 +191,11 @@ const SyllabusScanner = () => {
   // }, []);
 
   const handleAddAllEvents = useCallback(async () => {
+    console.log(calendarId, userId);
     if (!events?.length || !courseName) {
       setError('Please enter a course name before adding events');
       setShowError(true);
       return;
-    }
-    
-    const token = sessionStorage.getItem('token');
-    let userId;
-    try {
-      // For JWT tokens
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
-      setAccountId(userId);
-      
-      if (!userId) {
-        throw new Error('User ID not found in token');
-      }
-    } catch (tokenError) {
-      console.error('Error parsing token:', tokenError);
-      throw new Error('Invalid authentication token. Please log in again.');
-    }
-
-    try {
-      const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountId: userId, query: "default" })
-      });
-      const defaultCalendar = await getDefaultCalendar.json();
-      if (defaultCalendar) {
-        // redirect to the default calendar page
-        setCalendarId(defaultCalendar.id);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      window.location.href = '/login'; // Redirect to login page
     }
 
     setIsAddingEvents(true);
@@ -193,48 +224,28 @@ const SyllabusScanner = () => {
       
       // Process events sequentially
       for (const event of events) {
-        // Prepare event data without tags initially
+        // Prepare event data with all required fields and proper types
+        const recurringValue = event.recurring === true ? 'Weekly' : 
+                             event.recurring === false ? null : 
+                             typeof event.recurring === 'string' ? event.recurring : null;
         const eventData = {
           userId: userId,
           calendarId: calendarId,
           title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
-          date: event.date,
-          recurring: event.recurring,
-          color: selectedColor || '#1976d2', // Ensure color always has a default value
+          date: new Date(event.date), // Ensure proper DateTime conversion
+          recurring: recurringValue,
+          color: selectedColor || '#1976d2',
+          type: "EVENT",
           description: null,
-          start: null,
-          end: null,
-          type: "EVENT"
+          endDate: null,
+          reminder: null,
+          task: false,
+          completed: false,
+          expectedTime: null,
+          completionTime: null,
+          difficulty: null,
+          tags: isUniversityWideEvent(event.eventTitle) ? [] : [courseName]
         };
-
-        // Only add tags if it's not a university-wide event
-        if (!isUniversityWideEvent(event.eventTitle) && courseName) {
-          try {
-            // Create the tag first
-            const tagResponse = await fetch('/api/tag', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                name: courseName,
-                color: selectedColor || '#1976d2'
-              })
-            });
-            
-            if (tagResponse.ok) {
-              // Now that we know the tag exists, we can add it to the eventData
-              eventData.tags = {
-                connect: [{
-                  name: courseName
-                }]
-              };
-            }
-          } catch (tagErr) {
-            console.error('Error with tag, continuing without tag:', tagErr);
-            // Continue without tags if there's an issue
-          }
-        }
 
         console.log('Adding event:', eventData);
 
@@ -276,41 +287,12 @@ const SyllabusScanner = () => {
   }, [events, courseName, selectedColor]);
 
   const handleAddSingleEvent = useCallback(async (event) => {
+    console.log(calendarId, userId);
+
     if (!courseName) {
       setError('Please enter a course name before adding events');
       setShowError(true);
       return;
-    }
-    
-    const token = sessionStorage.getItem('token');
-    let userId;
-    try {
-      // For JWT tokens
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
-      
-      if (!userId) {
-        throw new Error('User ID not found in token');
-      }
-    } catch (tokenError) {
-      console.error('Error parsing token:', tokenError);
-      throw new Error('Invalid authentication token. Please log in again.');
-    }
-
-    try {
-      const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountId: userId, query: "default" })
-      });
-      const defaultCalendar = await getDefaultCalendar.json();
-      if (defaultCalendar) {
-        // redirect to the default calendar page
-        setCalendarId(defaultCalendar.id);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      window.location.href = '/login'; // Redirect to login page
     }
 
     try {
@@ -332,23 +314,22 @@ const SyllabusScanner = () => {
           // Continue anyway, the API might return an error if the tag already exists
         }
       }
+      const recurringValue = event.recurring === true ? 'Weekly' : 
+                             event.recurring === false ? null : 
+                             typeof event.recurring === 'string' ? event.recurring : null;
 
       const eventData = {
         userId: userId,
         calendarId: calendarId,
         title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
         date: event.date,
-        recurring: event.recurring,
+        recurring: recurringValue,
         color: selectedColor || '#1976d2', // Ensure color always has a default value
         description: null,
         start: null,
         end: null,
         type: "EVENT",
-        tags: {
-          connect: isUniversityWideEvent(event.eventTitle) ? [] : [{
-            name: courseName
-          }]
-        }
+        tags: isUniversityWideEvent(event.eventTitle) ? [] : [courseName]
       };
 
       console.log('Adding single event:', eventData);
@@ -366,7 +347,7 @@ const SyllabusScanner = () => {
         throw new Error(responseError.message || 'Failed to add event');
       }
 
-      setError('Event added successfully');
+      setError('Successfully added event');
       setShowError(true);
 
     } catch (err) {
