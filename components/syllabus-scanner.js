@@ -51,6 +51,7 @@ const SyllabusScanner = () => {
   const [isAddingEvents, setIsAddingEvents] = useState(false);
   const [addedCount, setAddedCount] = useState(0);
   const [accountId, setAccountId] = useState(null);
+  const [calendarId, setCalendarId] = useState(null);
   const [courseName, setCourseName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#1976d2');
   
@@ -140,6 +141,7 @@ const SyllabusScanner = () => {
       // For JWT tokens
       const payload = JSON.parse(atob(token.split('.')[1]));
       userId = payload.userId || payload.sub; // 'sub' is commonly used for user IDs in JWTs
+      setAccountId(userId);
       
       if (!userId) {
         throw new Error('User ID not found in token');
@@ -147,6 +149,22 @@ const SyllabusScanner = () => {
     } catch (tokenError) {
       console.error('Error parsing token:', tokenError);
       throw new Error('Invalid authentication token. Please log in again.');
+    }
+
+    try {
+      const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: userId, query: "default" })
+      });
+      const defaultCalendar = await getDefaultCalendar.json();
+      if (defaultCalendar) {
+        // redirect to the default calendar page
+        setCalendarId(defaultCalendar.id);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      window.location.href = '/login'; // Redirect to login page
     }
 
     setIsAddingEvents(true);
@@ -177,8 +195,8 @@ const SyllabusScanner = () => {
       for (const event of events) {
         // Prepare event data without tags initially
         const eventData = {
-          id: crypto.randomUUID(),
           userId: userId,
+          calendarId: calendarId,
           title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
           date: event.date,
           recurring: event.recurring,
@@ -280,6 +298,22 @@ const SyllabusScanner = () => {
     }
 
     try {
+      const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: userId, query: "default" })
+      });
+      const defaultCalendar = await getDefaultCalendar.json();
+      if (defaultCalendar) {
+        // redirect to the default calendar page
+        setCalendarId(defaultCalendar.id);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      window.location.href = '/login'; // Redirect to login page
+    }
+
+    try {
       // First, ensure the course tag exists if this isn't a university-wide event
       if (!isUniversityWideEvent(event.eventTitle)) {
         try {
@@ -300,8 +334,8 @@ const SyllabusScanner = () => {
       }
 
       const eventData = {
-        id: crypto.randomUUID(),
         userId: userId,
+        calendarId: calendarId,
         title: isUniversityWideEvent(event.eventTitle) ? event.eventTitle : `${courseName}: ${event.eventTitle}`,
         date: event.date,
         recurring: event.recurring,
