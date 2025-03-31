@@ -7,6 +7,7 @@ export async function POST(request) {
 
     // Ensure all fields are filled out
     if (!name || !tag || !userId || !colour) {
+      console.log(name); console.log(tag); console.log(userId); console.log(colour);
       return NextResponse.json({ message: "Please fill out all fields" }, { status: 400 });
     }
 
@@ -22,7 +23,7 @@ export async function POST(request) {
     });
 
     if (course) {
-      return NextResponse.json({ message: "Course already exists" }, { status: 400 });
+      return NextResponse.json({ message: "A course with the same name or tag already exists" }, { status: 400 });
     }
 
     // Check if the tag exists
@@ -31,7 +32,12 @@ export async function POST(request) {
     });
 
     if (!existingTag) {
-      return NextResponse.json({ message: "Tag does not exist" }, { status: 400 });
+      await prisma.tag.create({
+        data: {
+          name: tag,
+          color: colour
+        }
+      });
     }
 
     // Create new course
@@ -103,6 +109,26 @@ export async function DELETE(request) {
     });
 
     return NextResponse.json({ message: "Course deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error(error.stack);
+    return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const { id, name, tag, colour } = await request.json();
+
+    if (!id || !name || !tag || !colour) {
+      return NextResponse.json({ message: "Please fill out all fields" }, { status: 400 });
+    }
+
+    const updatedCourse = await prisma.course.update({
+      where: { id },
+      data: { name, tag, colour },
+    });
+
+    return NextResponse.json(updatedCourse, { status: 200 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });
