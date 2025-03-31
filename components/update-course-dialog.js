@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "@mui/material";
 import { BaseCourseDialog } from "./base-course-dialog";
 
 export default function UpdateCourseDialog(props) {
