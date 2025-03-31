@@ -96,8 +96,8 @@ model Calendar {
 
 model Course {
   id    String  @id @default(uuid())
-  name  String  @unique
-  tag   String  @unique
+  name  String
+  tag   String
   colour String
 
   userId String
