@@ -8,7 +8,7 @@ export default function CreateCourseDialog(props) {
 
     const [courseData, setCourseData] = React.useState({
         name: '',
-        colour: '#FF0000',
+        colour: '#777777',
         tag: '',
     });
 
