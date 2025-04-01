@@ -5,7 +5,7 @@ import ShowEventDialog from "./show-event-dialog";
 import CreateEventDialog from "./create-event-dialog";
 import './weekly-view.css';
 
-function WeeklyView({ currentDay, events, accountId, updateCallback }) {
+function WeeklyView({ currentDay, events, accountId, calendarId, updateCallback }) {
     // Add state for acknowledged conflicts
     const [acknowledgedConflicts, setAcknowledgedConflicts] = useState(new Set());
     const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -245,6 +245,7 @@ function WeeklyView({ currentDay, events, accountId, updateCallback }) {
             {/* Add CreateEventDialog */}
             <CreateEventDialog
                 accountId={accountId}
+                calendarId={calendarId}
                 callback={updateCallback}
                 open={showCreateDialog}
                 onClose={() => setShowCreateDialog(false)}

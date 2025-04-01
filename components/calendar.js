@@ -430,6 +430,7 @@ export default class Calendar extends Component {
                                     currentDay={currentDay}
                                     events={events}
                                     accountId={this.state.accountId}
+                                    calendarId={this.state.calendarId}
                                     updateCallback={this.updateEvents}
                                 />
                             )}
