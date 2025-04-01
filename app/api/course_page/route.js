@@ -117,10 +117,38 @@ export async function DELETE(request) {
 
 export async function PUT(request) {
   try {
-    const { id, name, tag, colour } = await request.json();
+    const { id, name, tag, colour, userId } = await request.json();
 
     if (!id || !name || !tag || !colour) {
       return NextResponse.json({ message: "Please fill out all fields" }, { status: 400 });
+    }
+
+    let course = await prisma.course.findFirst({
+      where: {
+        userId,
+        tag,
+        NOT: {
+          id,
+        },
+      },
+    });
+
+    if (course) {
+      return NextResponse.json({ message: "A course with the same tag already exists" }, { status: 400 });
+    }
+
+    course = await prisma.course.findFirst({
+      where: {
+        userId,
+        name,
+        NOT: {
+          id,
+        },
+      },
+    });
+
+    if (course) {
+      return NextResponse.json({ message: "A course with the same name already exists" }, { status: 400 });
     }
 
     const updatedCourse = await prisma.course.update({

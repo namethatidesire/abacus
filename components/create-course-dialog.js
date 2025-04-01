@@ -4,6 +4,7 @@ import { BaseCourseDialog } from "./base-course-dialog";
 
 export default function CreateCourseDialog(props) {
     const { userId, open, setOpen, onClose, successCallback, errorCallback } = props;
+    const [alert, setAlert] = React.useState(null);
 
     const [courseData, setCourseData] = React.useState({
         name: '',
@@ -37,15 +38,15 @@ export default function CreateCourseDialog(props) {
                 body: JSON.stringify(newCourse)
             });
             if (!response.ok) {
-                errorCallback('Error creating course: ' + await response.json().then(data => data.message));
+                setAlert({severity: 'error', message: 'Error creating course: ' + await response.json().then(data => data.message)});
             } else {
                 successCallback();
+                handleClose();
             }
         } catch (e) {
             console.log('Error creating course', e);
-            errorCallback('Error creating course: ' + e);
+            setAlert({severity: 'error', message: 'Error creating course: ' + e.message});
         }
-        handleClose();
     }
 
     return (
@@ -59,6 +60,7 @@ export default function CreateCourseDialog(props) {
                 onSubmit={createCourse}
                 submitButtonText="Create Course"
                 title="Create Course"
+                alert={alert}
             />
         </React.Fragment>
     );

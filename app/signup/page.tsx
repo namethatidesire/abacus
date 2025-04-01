@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Alert } from '@mui/material';
 import styles from './signup.module.css';
 
 const SignupPage = () => {
@@ -41,11 +42,11 @@ const SignupPage = () => {
         window.location.href = '/login';
       } else {
         const errorData: ErrorResponse = await response.json();
-        console.error('Error:', errorData);
+        console.log('Error:', errorData);
         setMessage(errorData.message);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.log('Error:', error);
       setMessage('An error occurred. Please try again.');
     }
   };
@@ -95,7 +96,7 @@ const SignupPage = () => {
           Already have an account? <a href="/login">Login</a>
         </p>
       </form>
-      {message && <p className={styles.message}>{message}</p>}
+      {message && <Alert severity="error">{message}</Alert>}
     </div>
   );
 };

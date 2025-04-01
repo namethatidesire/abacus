@@ -13,18 +13,19 @@ import {
     FormControl,
     Slider,
     Checkbox,
-    FormControlLabel
+    FormControlLabel,
+    Alert
 } from "@mui/material";
 import { CirclePicker } from "react-color";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
 import Tags from "./tags";
 
 export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData, onSubmit, submitButtonText }) => {
     const [showExtraFields, setShowExtraFields] = useState(eventData.task);
     const [showCompletionTimeField, setShowCompletionTimeField] = useState(eventData.completed);
     const [estimatedTime, setEstimatedTime] = useState(null);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         if (open) {
@@ -185,6 +186,7 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
+                { error !== "" && <Alert severity="error">{error}</Alert> }
                 <TextField
                     autoFocus
                     required
@@ -317,7 +319,16 @@ export const BaseEventDialog = ({ open, onClose, title, eventData, setEventData,
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={handleSubmit}>{submitButtonText}</Button>
+                <Button onClick={() => {
+                    if (!eventData.title?.trim()) {
+                        setError("Please enter a title");
+                        return;
+                    }
+                    setError("");
+                    handleSubmit();
+                }}>
+                    {submitButtonText}
+                </Button>
             </DialogActions>
         </Dialog>
     );

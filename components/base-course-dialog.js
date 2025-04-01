@@ -1,6 +1,7 @@
 import React from "react";
 import { CirclePicker } from "react-color";
 import {
+    Alert,
     Button,
     Dialog, DialogActions,
     DialogContent,
@@ -9,12 +10,13 @@ import {
     TextField
 } from "@mui/material";
 
-export const BaseCourseDialog = ({open, onClose, title, courseData, setCourseData, onSubmit, submitButtonText}) => {
+export const BaseCourseDialog = ({open, onClose, title, courseData, setCourseData, onSubmit, submitButtonText, alert}) => {
 
     return (
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
+                { alert && <Alert severity={alert.severity} style={{ marginBottom: "10px" }}>{alert.message}</Alert>}
                 <TextField
                     autoFocus
                     required
