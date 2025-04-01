@@ -8,22 +8,35 @@ export async function POST(request, { params }) {
 
 		let foundEvents;
 		if (filterOR) {
-			foundEvents = await prisma.event.findMany({
-				where:  {
-					userId: userId,
-					title: {
-						contains: eventTitle
-					},
-					type: eventType,
-					tags: {
-                        some: {
-                          name: {
-                            in: eventTags
-                          }
-                        }
-                    },
-				},
-			});
+		    if (eventTags.length > 0) {
+                 foundEvents = await prisma.event.findMany({
+                 	where:  {
+                 		userId: userId,
+                 		title: {
+                 			contains: eventTitle
+                 		},
+                 		type: eventType,
+                 		tags: {
+                                some: {
+                                  name: {
+                                    in: eventTags
+                                  }
+                                }
+                        },
+                 	},
+                 });
+		    }
+			else { // ignore event tags if OR is selected and tag field is empty
+			    foundEvents = await prisma.event.findMany({
+               		where:  {
+               			userId: userId,
+               			title: {
+               				contains: eventTitle
+               			},
+               			type: eventType,
+               		},
+               	});
+			}
 		}
 		else { //FilterAND
 			foundEvents = await prisma.event.findMany({
