@@ -625,14 +625,6 @@ const SyllabusScanner = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
-      <Typography variant="h2" component="h1" align="center" gutterBottom sx={{ 
-        fontSize: '48px',
-        fontWeight: 400,
-        mb: 6 
-      }}>
-        Syllabus Scanner
-      </Typography>
-
       <Box sx={{ mb: 4 }}>
         <TextField
           required
