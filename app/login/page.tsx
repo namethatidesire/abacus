@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Alert } from '@mui/material';
 import styles from './login.module.css';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [alert, setAlert] = useState<{ message: string, severity: 'error' | 'warning' | 'info' | 'success' }>({ message: '', severity: 'error' });
 
   const handleSubmit = async (event: { preventDefault: () => void; }) => {
     event.preventDefault();
@@ -20,57 +21,57 @@ const LoginPage = () => {
 
       if (response.status === 201) {
         const data = await response.json();
-        setMessage(data.message);
+        setAlert({ message: data.message, severity: 'success' });
         sessionStorage.setItem('token', data.token);
         console.log(data.token);
         window.location.href = `/calendar`; // Send the user to the calendar page
-      } else if (response.status === 401|| response.status === 403) {
+      } else if (response.status === 401 || response.status === 403) {
         const data = await response.json();
-        setMessage(data.message);
+        setAlert({ message: data.message, severity: 'error' });
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData);
-        setMessage(errorData.message || 'An error occurred.');
+        setAlert({ message: errorData.message || 'An error occurred.', severity: 'error' });
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessage('An error occurred. Please try again.');
+      setAlert({ message: 'An error occurred. Please try again.', severity: 'error' });
     }
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Login</h1>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <div>
-          <label className={styles.label} htmlFor="username">Username:</label>
-          <input
-            className={styles.input}
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className={styles.label} htmlFor="password">Password:</label>
-          <input
-            className={styles.input}
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button className={styles.button} type="submit">Login</button>
-      </form>
-      {message && <p className={styles.message}>{message}</p>}
-      <p className={styles.signupLink}>
-        Don't have an account? <Link href="/signup" className={styles.signupLinkText}>Sign up here</Link>
-      </p>
-    </div>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Login</h1>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div>
+            <label className={styles.label} htmlFor="username">Username:</label>
+            <input
+                className={styles.input}
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+            />
+          </div>
+          <div>
+            <label className={styles.label} htmlFor="password">Password:</label>
+            <input
+                className={styles.input}
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+            />
+          </div>
+          <button className={styles.button} type="submit">Login</button>
+        </form>
+        {alert.message && <Alert sx={{marginTop: 1}} severity={alert.severity}>{alert.message}</Alert>}
+        <p className={styles.signupLink}>
+          Don't have an account? <Link href="/signup" className={styles.signupLinkText}>Sign up here</Link>
+        </p>
+      </div>
   );
 };
 
