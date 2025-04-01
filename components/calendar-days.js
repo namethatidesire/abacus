@@ -111,12 +111,118 @@ function CalendarDays(props) {
         setAcknowledgedConflicts(savedAcknowledgments);
     }, []);
 
+    const renderDayEvents = (dayEvents) => {
+        // Sort events by time
+        const sortedEvents = [...dayEvents].sort((a, b) => {
+            const timeA = new Date(`${a.date}T${a.time}`).getTime();
+            const timeB = new Date(`${b.date}T${b.time}`).getTime();
+            return timeA - timeB;
+        });
+
+        const visibleEvents = sortedEvents.slice(0, 2); // Limit to 2 events per day
+
+        return (
+            <div className="calendar-day-events">
+                {visibleEvents.map((event, eventIndex) => {
+                    const isHighlighted = props.highlightedEventId === event.id;
+                    const conflictingEvents = sortedEvents.filter(otherEvent => {
+                        if (otherEvent.id === event.id) return false;
+                        return checkEventOverlap(event, otherEvent);
+                    });
+                    
+                    const hasConflict = conflictingEvents.length > 0;
+                    const conflictId = hasConflict 
+                        ? `conflict-${event.id}-${conflictingEvents.map(e => e.id).join('-')}`
+                        : null;
+                    const isConflictAcknowledged = conflictId 
+                        ? acknowledgedConflicts[conflictId] || false
+                        : false;
+
+                    return (
+                        <ShowEventDialog
+                            key={eventIndex}
+                            event={event}
+                            accountId={props.accountId}
+                            updateCallback={props.updateCallback}
+                            hasConflict={hasConflict}
+                            conflictingEvents={conflictingEvents}
+                            onAcknowledgeConflict={() => {
+                                if (hasConflict) {
+                                    handleAcknowledgeConflict(
+                                        event.id, 
+                                        conflictingEvents.map(e => e.id)
+                                    );
+                                }
+                            }}
+                        >
+                            <div 
+                                className={`event${isHighlighted ? " highlighted-event" : ""}${hasConflict && !isConflictAcknowledged ? " conflict-event" : ""}`}
+                                style={{ 
+                                    backgroundColor: event.color,
+                                    boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 
+                                              (hasConflict && !isConflictAcknowledged) ? '0 0 4px 2px #ff000066' : 'none',
+                                    transform: isHighlighted ? 'scale(1.05)' : 'none',
+                                    zIndex: isHighlighted ? 10 : 'auto',
+                                    transition: 'none',
+                                    color: 'white',
+                                    fontWeight: hasConflict ? 600 : 400,
+                                    padding: '4px 8px',
+                                    borderRadius: '8px',
+                                    marginBottom: '4px',
+                                    fontSize: '0.8em',
+                                    cursor: 'pointer',
+                                    border: (hasConflict && !isConflictAcknowledged) ? '2px solid #ff0000' : 'none',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '8px' // Add gap between flex items
+                                }}
+                            >
+                                <span style={{ 
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flexGrow: 1,
+                                    minWidth: 0 // Required for text truncation to work in a flex container
+                                }}>
+                                    {event.title}
+                                </span>
+                                <span style={{ 
+                                    fontSize: '0.75em',
+                                    opacity: 0.9,
+                                    flexShrink: 0 // Prevents time from shrinking
+                                }}>
+                                    {new Date(`${event.date}T${event.time}`).toLocaleTimeString([], { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                                {hasConflict && !isConflictAcknowledged && 
+                                    <span style={{ 
+                                        marginLeft: '4px',
+                                        flexShrink: 0 // Prevents warning icon from shrinking
+                                    }}>⚠️</span>
+                                }
+                            </div>
+                        </ShowEventDialog>
+                    );
+                })}
+
+                {sortedEvents.length > 2 && (
+                    <Typography variant="caption" className="more-events">
+                        +{sortedEvents.length - 2} more
+                    </Typography>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="table-content">
             {currentDays.map((day, index) => {
                 const dateKey = day.date.toDateString();
                 const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
-                const visibleEvents = dayEvents.slice(0, 2); // Limit to 2 events per day
                 
                 return (
                     <div 
@@ -154,102 +260,7 @@ function CalendarDays(props) {
                                 {day.number}
                             </Typography>
                         </div>
-                        
-                        <div className="calendar-day-events">
-                            {/* Render up to 2 events */}
-                            {visibleEvents.map((event, eventIndex) => {
-                                const isHighlighted = props.highlightedEventId === event.id;
-                                
-                                // Find all conflicting events
-                                const conflictingEvents = dayEvents.filter((otherEvent) => {
-                                    if (otherEvent.id === event.id) return false;
-                                    return checkEventOverlap(event, otherEvent);
-                                });
-                                
-                                const hasConflict = conflictingEvents.length > 0;
-                                
-                                // Check if this conflict has been acknowledged
-                                const conflictId = hasConflict 
-                                    ? `conflict-${event.id}-${conflictingEvents.map(e => e.id).join('-')}`
-                                    : null;
-                                    
-                                const isConflictAcknowledged = conflictId 
-                                    ? acknowledgedConflicts[conflictId] || false
-                                    : false;
-                                
-                                return (
-                                    <ShowEventDialog
-                                        key={eventIndex}
-                                        event={event}
-                                        accountId={props.accountId}
-                                        updateCallback={props.updateCallback}
-                                        hasConflict={hasConflict}
-                                        conflictingEvents={conflictingEvents}
-                                        onAcknowledgeConflict={() => {
-                                            // Update the state in CalendarDays when a conflict is acknowledged
-                                            if (hasConflict) {
-                                                handleAcknowledgeConflict(
-                                                    event.id, 
-                                                    conflictingEvents.map(e => e.id)
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <div 
-                                            className={`event${isHighlighted ? " highlighted-event" : ""}${hasConflict && !isConflictAcknowledged ? " conflict-event" : ""}`}
-                                            style={{ 
-                                                backgroundColor: event.color,
-                                                boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 
-                                                          (hasConflict && !isConflictAcknowledged) ? '0 0 4px 2px #ff000066' : 'none',
-                                                transform: isHighlighted ? 'scale(1.05)' : 'none',
-                                                zIndex: isHighlighted ? 10 : 'auto',
-                                                transition: 'none',
-                                                color: 'white',
-                                                fontWeight: hasConflict ? 600 : 400,
-                                                padding: '4px 8px',
-                                                borderRadius: '8px',
-                                                marginBottom: '4px',
-                                                textAlign: 'center',
-                                                fontSize: '0.8em',
-                                                cursor: 'pointer',
-                                                border: (hasConflict && !isConflictAcknowledged) ? '2px solid #ff0000' : 'none',
-                                                position: 'relative' // Add this for tooltip positioning
-                                            }}
-                                            onMouseMove={(e) => {
-                                                const tooltip = e.currentTarget.querySelector('.conflict-tooltip');
-                                                if (tooltip) {
-                                                    const padding = -50;
-                                                    tooltip.style.left = `${e.clientX + padding}px`;
-                                                    tooltip.style.top = `${e.clientY - tooltip.offsetHeight - 10}px`;
-                                                }
-                                            }}
-                                        >
-                                            {event.title}
-                                            {hasConflict && !isConflictAcknowledged && <span style={{ marginLeft: '4px' }}>⚠️</span>}
-                                            
-                                            {/* Custom tooltip */}
-                                            {hasConflict && !isConflictAcknowledged && (
-                                                <div className="conflict-tooltip">
-                                                    <strong>Conflicts with:</strong>
-                                                    {conflictingEvents.map((e, i) => (
-                                                        <div key={i}>
-                                                            • {e.title} ({e.time})
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </ShowEventDialog>
-                                );
-                            })}
-
-                            {/* Display "+X more" if there are hidden events */}
-                            {dayEvents.length > 2 && (
-                                <Typography variant="caption" className="more-events">
-                                    +{dayEvents.length - 2} more
-                                </Typography>
-                            )}
-                        </div>
+                        {renderDayEvents(dayEvents)}
                     </div>
                 );
             })}
