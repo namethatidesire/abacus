@@ -1,9 +1,16 @@
 "use client";
 import React, { useState } from 'react';
 import { Typography } from "@mui/material";
+import { Crimson_Pro } from 'next/font/google';
 import ShowEventDialog from "./show-event-dialog";
 import CreateEventDialog from "./create-event-dialog";
 import './weekly-view.css';
+
+// Initialize Crimson Pro font
+const crimsonPro = Crimson_Pro({
+    subsets: ['latin'],
+    weight: ['400', '500', '600'],
+});
 
 function WeeklyView({ currentDay, events, accountId, calendarId, updateCallback }) {
     // Add state for acknowledged conflicts
@@ -138,7 +145,8 @@ function WeeklyView({ currentDay, events, accountId, calendarId, updateCallback 
                    overlap?.overlappingWith.length > 0 ? '2px solid #FFA500' : 'none',
             boxShadow: hasUnacknowledgedConflict ? '0 0 4px rgba(255, 0, 0, 0.4)' : 
                       overlap?.overlappingWith.length > 0 ? '0 0 4px rgba(255, 165, 0, 0.4)' : 
-                      '0 2px 4px rgba(0,0,0,0.1)'
+                      '0 2px 4px rgba(0,0,0,0.1)',
+            color: '#ffffff' // Add this line to make the text white
         };
     };
 
@@ -154,7 +162,7 @@ function WeeklyView({ currentDay, events, accountId, calendarId, updateCallback 
     const weekDays = getWeekDays(weekStart);
 
     return (
-        <div className="weekly-container">
+        <div className={`weekly-container ${crimsonPro.className}`}>
             {/* Header row with day names */}
             <div className="weekly-header">
                 <div className="time-header"></div>
@@ -162,10 +170,19 @@ function WeeklyView({ currentDay, events, accountId, calendarId, updateCallback 
                     const isToday = day.toDateString() === new Date().toDateString();
                     return (
                         <div key={index} className={`day-header${isToday ? " today" : ""}`}>
-                            <Typography variant="subtitle2">
+                            <Typography 
+                                variant="subtitle2"
+                                sx={{ fontFamily: crimsonPro.style.fontFamily }}
+                            >
                                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
                             </Typography>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            <Typography 
+                                variant="subtitle1" 
+                                sx={{ 
+                                    fontWeight: 600,
+                                    fontFamily: crimsonPro.style.fontFamily 
+                                }}
+                            >
                                 {day.getDate()}
                             </Typography>
                         </div>
