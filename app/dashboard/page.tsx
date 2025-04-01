@@ -89,7 +89,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <div className="w-[35%] bg-white p-6 h-[calc(100vh-64px)] text-gray-800 shadow-md m-5 rounded-2xl">
-        <p className="text-4xl font-semibold mb-2.5 text-blue-500">
+        <p className="text-4xl font-semibold mb-2.5">
           Dashboard
         </p>
         <p className="text-3xl mb-4 text-gray-800">
