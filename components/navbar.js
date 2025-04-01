@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from "next/link";
 import { IconButton, Tooltip, Menu, MenuItem } from "@mui/material";
 import { Menu as MenuIcon, Home, CalendarMonth, UploadFile, Class, Timer, List, Chat, LocalLibrary, Logout } from "@mui/icons-material";
@@ -11,14 +11,17 @@ const Navbar = () => {
     const chatbotRef = useRef(null);
     const [studyToolsAnchorEl, setStudyToolsAnchorEl] = useState(null);
 
-    // Open the dropdown menu on hover
-    const handleStudyToolsMouseEnter = (event) => {
-        setStudyToolsAnchorEl(event.currentTarget);
+    // Toggle the dropdown menu on click
+    const handleStudyToolsClick = (event) => {
+        if (studyToolsAnchorEl) {
+            setStudyToolsAnchorEl(null); // Close the menu if it's already open
+        } else {
+            setStudyToolsAnchorEl(event.currentTarget); // Open the menu
+        }
     };
 
-    // Close the dropdown menu
-    const handleStudyToolsMouseLeave = () => {
-        setStudyToolsAnchorEl(null);
+    const handleStudyToolsClose = () => {
+        setStudyToolsAnchorEl(null); // Close the menu
     };
 
     const openPomodoroTimer = () => {
@@ -64,28 +67,35 @@ const Navbar = () => {
                     </Link>
                 </Tooltip>
 
-                {/* Study Tools with Dropdown */}
-                <div
-                    onMouseEnter={handleStudyToolsMouseEnter}
-                    onMouseLeave={handleStudyToolsMouseLeave}
-                >
+                {/* Study Tools with Click-Based Toggle */}
+                <div>
                     <Tooltip title="Study Tools" arrow>
-                        <IconButton className="navbar-icon">
+                        <IconButton
+                            className="navbar-icon"
+                            onClick={handleStudyToolsClick} // Toggle menu on click
+                        >
                             <LocalLibrary sx={{ color: '#FBE59D' }} />
                         </IconButton>
                     </Tooltip>
                     <Menu
-                        anchorEl={studyToolsAnchorEl} // Correctly pass anchorEl to the Menu component
+                        anchorEl={studyToolsAnchorEl}
                         open={Boolean(studyToolsAnchorEl)}
-                        onClose={handleStudyToolsMouseLeave}
-                        MenuListProps={{
-                            onMouseLeave: handleStudyToolsMouseLeave,
-                        }}
+                        onClose={handleStudyToolsClose}
                     >
-                        <MenuItem onClick={openPomodoroTimer}>
+                        <MenuItem
+                            onClick={() => {
+                                openPomodoroTimer();
+                                handleStudyToolsClose(); // Close the menu after clicking
+                            }}
+                        >
                             <Timer sx={{ marginRight: '10px' }} /> Pomodoro Timer
                         </MenuItem>
-                        <MenuItem onClick={openTodoList}>
+                        <MenuItem
+                            onClick={() => {
+                                openTodoList();
+                                handleStudyToolsClose(); // Close the menu after clicking
+                            }}
+                        >
                             <List sx={{ marginRight: '10px' }} /> Todo List
                         </MenuItem>
                     </Menu>
