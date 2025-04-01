@@ -15,7 +15,6 @@ const CalendarPage = () => {
     const fetchUserId = async () => {
       const token = sessionStorage.getItem('token');
       if (!token) {
-        alert('Missing token. Please log in again.');
         window.location.href = '/login'; // Redirect to login page
         return;
       }
@@ -35,11 +34,9 @@ const CalendarPage = () => {
           const { userId } = data.decoded;
           setUserId(userId); // Set the user ID in state
         } else {
-          alert('Invalid token. Please log in again.');
           window.location.href = '/login'; // Redirect to login page
         }
       } catch (error) {
-        alert('Error verifying token. Please log in again.');
         window.location.href = '/login'; // Redirect to login page
       }
     };

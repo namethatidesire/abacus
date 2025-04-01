@@ -108,6 +108,7 @@ const Dashboard = () => {
           padding: '10px',
         }}>
           <h2>Today's Events</h2>
+          
           {events.length > 0 ? (
             <ul>
               {events.map(event => (
