@@ -89,7 +89,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <div className="w-[35%] bg-white p-6 h-[calc(100vh-64px)] text-gray-800 shadow-md m-5 rounded-2xl">
-        <p className="text-4xl font-semibold mb-2.5 text-blue-600">
+        <p className="text-4xl font-semibold mb-2.5 text-blue-500">
           Dashboard
         </p>
         <p className="text-3xl mb-4 text-gray-800">
@@ -100,7 +100,7 @@ const Dashboard = () => {
         </p>
         
         <div className="bg-gray-50 rounded-xl p-5 shadow-sm border border-gray-200">
-          <h2 className="text-2xl text-blue-600 mb-4">
+          <h2 className="text-2xl text-blue-500 mb-4">
             Today's Events
           </h2>
           
@@ -118,9 +118,9 @@ const Dashboard = () => {
                 {todaysEvents.map(event => (
                   <li 
                     key={event.id} 
-                    className="p-3 mb-2 bg-white rounded-lg text-gray-800 flex items-center border border-gray-200 shadow-sm"
+                    className="p-3 mb-2 bg-white rounded-lg text-gray-800 flex items-center border border-gray-200 shadow-sm hover:border-blue-200 transition-colors"
                   >
-                    <span className="text-blue-600 mr-2.5 text-sm font-medium">
+                    <span className="text-blue-500 mr-2.5 text-sm font-medium">
                       [{new Date(event.date).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 

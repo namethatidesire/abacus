@@ -54,10 +54,10 @@ export default function RenderProgressBar(accountId) {
                     Overall Completion:
                 </label>
                 <div className="relative pt-1">
-                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-100">
+                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-50">
                         <div 
                             style={{ width: `${overallProgress * 100}%` }}
-                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 transition-all duration-300"
+                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-300"
                         />
                     </div>
                     <span className="text-xs text-gray-500">
