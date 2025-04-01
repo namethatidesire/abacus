@@ -2,12 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/navbar';
-import {Button, Card, CardActions, CardContent, Chip, Container, Divider, Typography} from '@mui/material';
+import {
+  Alert, AlertColor,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  Container,
+  Divider,
+  Typography
+} from '@mui/material';
 import CreateCourseDialog from "@/components/create-course-dialog";
 import {Crimson_Pro} from "next/font/google";
 import UpdateCourseDialog from "@/components/update-course-dialog";
 import dayjs from 'dayjs';
 import {Grid} from "@mui/material";
+import {OverridableStringUnion} from "@mui/types";
 
 interface Course {
   id: string;
@@ -23,7 +34,7 @@ const crimsonPro = Crimson_Pro({
 });
 
 const CoursePage = () => {
-  const [message, setMessage] = useState('');
+  const [alertMessage, setAlertMessage] = useState<{severity: OverridableStringUnion<AlertColor>, message: string} | null>(null);
   const [openCreateCourseDialog, setOpenCreateCourseDialog] = useState(false);
   const [openUpdateCourseDialog, setOpenUpdateCourseDialog] = useState<string | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -75,11 +86,11 @@ const CoursePage = () => {
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData);
-        setMessage(errorData.message || 'An error occurred.');
+        setAlertMessage({severity: 'error', message: errorData.message || 'An error occurred.'});
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessage('An error occurred. Please try again.');
+      setAlertMessage({severity: 'error', message: 'An error occurred. Please try again.'});
     }
   };
 
@@ -96,16 +107,16 @@ const CoursePage = () => {
       });
 
       if (response.status === 200) {
-        setMessage('Course deleted successfully!');
+        setAlertMessage({severity: 'success', message: 'Course deleted successfully!'});
         setCourses(courses.filter(course => course.id !== courseId)); // Remove the deleted course from the list
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData);
-        setMessage(errorData.message || 'An error occurred.');
+        setAlertMessage({severity: 'error', message: errorData.message || 'An error occurred.'});
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessage('An error occurred. Please try again.');
+      setAlertMessage({severity: 'error', message: 'An error occurred. Please try again.'});
     }
   };
 
@@ -123,7 +134,7 @@ const CoursePage = () => {
               color: 'black'
             }}
         >Courses</Typography>
-        {message && <p style={{color:'black'}}>{message}</p>}
+        {alertMessage && <Alert sx={{marginBottom: 1}} severity={alertMessage.severity}>{alertMessage.message}</Alert>}
         {/* Creating each course */}
         <Grid container spacing={2}>
           {courses.map((course) => (
@@ -168,9 +179,9 @@ const CoursePage = () => {
             onClose={() => setOpenCreateCourseDialog(false)}
             successCallback={() => {
               fetchCourses();
-              setMessage('Course created successfully!');
+              setAlertMessage({severity: 'success', message: 'Course created successfully!'});
             }}
-            errorCallback={(error: string) => setMessage(error)}
+            errorCallback={(error: string) => setAlertMessage({severity: 'error', message: error})}
         />
       </Container>
       {openUpdateCourseDialog && (
@@ -181,9 +192,9 @@ const CoursePage = () => {
               onClose={() => setOpenUpdateCourseDialog(null)}
               successCallback={() => {
                 fetchCourses();
-                setMessage('Course updated successfully!');
+                setAlertMessage({severity: 'success', message: 'Course updated successfully!'});
               }}
-              errorCallback={(error: string) => setMessage(error)}
+              errorCallback={(error: string) => setAlertMessage({severity: 'error', message: error})}
           />
       )}
     </div>

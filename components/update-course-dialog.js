@@ -3,6 +3,7 @@ import { BaseCourseDialog } from "./base-course-dialog";
 
 export default function UpdateCourseDialog(props) {
     const { course, open, setOpen, onClose, successCallback, errorCallback } = props;
+    const [alert, setAlert] = React.useState(null);
 
     const [courseData, setCourseData] = React.useState({
         name: course.name,
@@ -19,7 +20,8 @@ export default function UpdateCourseDialog(props) {
             id: course.id,
             name: courseData.name,
             colour: courseData.colour,
-            tag: typeof courseData.tag === 'string' ? courseData.tag : courseData.tag.name
+            tag: typeof courseData.tag === 'string' ? courseData.tag : courseData.tag.name,
+            userId: course.userId,
         };
 
         try {
@@ -31,15 +33,15 @@ export default function UpdateCourseDialog(props) {
                 body: JSON.stringify(updatedCourse)
             });
             if (!response.ok) {
-                errorCallback('Error updating course: ' + await response.json().then(data => data.message));
+                setAlert({severity: 'error', message: 'Error updating course: ' + await response.json().then(data => data.message)});
             } else {
                 successCallback();
+                handleClose();
             }
         } catch (e) {
             console.error('Error updating course', e);
-            errorCallback('Error updating course: ' + e);
+            setAlert({severity: 'error', message: 'Error updating course: ' + e.message});
         }
-        handleClose();
     }
 
     return (
@@ -51,6 +53,7 @@ export default function UpdateCourseDialog(props) {
             onSubmit={updateCourse}
             submitButtonText="Update Course"
             title="Update Course"
+            alert={alert}
         />
     );
 }
