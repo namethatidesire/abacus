@@ -40,6 +40,7 @@ const ChatBot = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [calendarId, setCalendarId] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState({});
   const [eventMap, setEventMap] = useState(new Map());
@@ -84,6 +85,7 @@ const ChatBot = () => {
   }
 
   interface Event {
+    tags: never[];
     id: string;
     title: string;
     date: string;
@@ -167,6 +169,31 @@ const ChatBot = () => {
     initializeAssistant();
   }, []);
 
+  useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const getDefaultCalendar = await fetch(`http://localhost:3000/api/calendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: userId, query: "default" })
+          });
+          const defaultCalendar = await getDefaultCalendar.json();
+          if (defaultCalendar) {
+            // redirect to the default calendar page
+            setCalendarId(defaultCalendar.id);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          window.location.href = '/login'; // Redirect to login page
+        }
+      };
+  
+      if (userId) {
+        fetchData();
+  
+      }
+    }, [userId]);
+
   // Build a map of event titles to event data for easy lookup
   const buildEventMap = (eventsData: { [dateKey: string]: Event[] }) => {
     const map = new Map();
@@ -179,6 +206,9 @@ const ChatBot = () => {
           title: event.title,
           date: event.date,
           time: event.time,
+          // Store tags if available
+          tags: event.tags || [],
+          // Use the event's color or generate a random one
           color: event.color || getRandomEventColor(event.title)
         });
       });
@@ -186,7 +216,7 @@ const ChatBot = () => {
     
     setEventMap(map);
   };
-  
+
   // Generate a consistent color for events that don't have a color
   const getRandomEventColor = (title: string) => {
     // Generate a color based on the event title (for consistency)
@@ -217,40 +247,31 @@ const ChatBot = () => {
         throw new Error('User ID not available');
       }
 
-      const response = await fetch(`/api/event/${effectiveUserId}`, {
+      const getEvents = await fetch(`/api/event/${effectiveUserId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+    if (getEvents.ok) {
+        const data = (await getEvents.json()).events || [];
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const processedEvents = Array.isArray(data) ? data.reduce((acc, event) => {
+            const eventDate = new Date(event.date);
+            const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
+            const dateKey = localDate.toDateString();
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push({
+                ...event,
+                date: localDate.toISOString().split('T')[0],
+                time: localDate.toTimeString().split(' ')[0].substring(0, 5)
+            });
+            return acc;
+        }, {}) : {};
+        return processedEvents;
       }
-
-      const events = await response.json();
-      
-      // Process events similar to Calendar.js
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const processedEvents = events.reduce((acc: { [x: string]: any[]; }, event: { date: string | number | Date; }) => {
-        const eventDate = new Date(event.date);
-        const localDate = new Date(eventDate.toLocaleString('en-US', { timeZone: userTimezone }));
-        const dateKey = localDate.toDateString();
-        
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        
-        acc[dateKey].push({
-          ...event,
-          date: localDate.toISOString().split('T')[0],
-          time: localDate.toTimeString().split(' ')[0].substring(0, 5)
-        });
-        
-        return acc;
-      }, {});
-      
-      return processedEvents;
     } catch (error) {
       console.error('Error fetching events:', error);
       // Don't set an error state here, just return null
@@ -270,14 +291,17 @@ const ChatBot = () => {
         throw new Error('User ID not available');
       }
 
-      // Use cached events or fetch fresh ones
-      let userEvents = events;
-      if (Object.keys(userEvents).length === 0) {
-        userEvents = await fetchUserEvents();
+      // Always fetch fresh events before sending the query
+      const userEvents = await fetchUserEvents();
+      if (userEvents) {
+        setEvents(userEvents);
+        buildEventMap(userEvents);
       }
       
-      const eventSummary = formatEventSummary(userEvents);
+      const eventSummary = formatEventSummary(userEvents || events);
       
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const todayInUserTz = new Date().toLocaleDateString('en-US', { timeZone: userTimezone });
       const response = await fetch('http://localhost:3000/api/chatbot', {
         method: 'POST',
         headers: {
@@ -302,13 +326,15 @@ const ChatBot = () => {
             1. When you mention an event in your response, always use the EXACT title of the event 
             as it appears in the schedule information.
             
-            2. Only suggest the user to create an event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
-            "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Description: description here]"
-
-            3. Today's date is ${new Date().toISOString().split('T')[0]}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
+            2. Only suggest the user to create a new event if the user asks something to entail that response. If you're suggesting the user create a new event, use this exact format:
+            "You could create a new event: [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Color: #8CA7D6 | Description: description here | Tags: tag1,tag2]"
+            
+            3. When suggesting tags for a new event, use relevant tags that appear in similar events from their existing schedule.
+            
+            4. Today's date is ${todayInUserTz}. When suggesting new events, ALWAYS ensure the dates are in the future (after today's date).
             
             For example:
-            "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Description: Weekly team sync-up]"
+            "You could create a new event: [Title: Team Meeting | Date: 2025-03-25 | Start: 14:00 | End: 15:00 | Color: #8CA7D6 | Description: Weekly team sync-up | Tags: work,meeting]"
             
             If they ask about specific dates or times, refer to the schedule information provided.
             If they ask for schedule analysis, provide insights based on their event distribution.
@@ -384,9 +410,13 @@ const ChatBot = () => {
         
         sortedEvents.forEach(event => {
           if (eventCount >= maxEvents) return;
-          // Add color information to help Claude understand which events to highlight
-          const colorInfo = event.color ? ` [color: ${event.color}]` : '';
-          summary += `- ${event.time}: ${event.title}${colorInfo} (${event.location || 'No location'})`;
+          // Explicitly include the color and tags in the event info
+          const colorInfo = event.color ? ` [color=${event.color}]` : '';
+          const tagInfo = event.tags && event.tags.length > 0 
+            ? ` [tags=${event.tags.map((tag: any) => tag.name).join(',')}]` 
+            : '';
+          
+          summary += `- ${event.time}: ${event.title}${colorInfo}${tagInfo} (${event.location || 'No location'})`;
           if (event.description) {
             summary += ` - ${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}`;
           }
@@ -399,59 +429,65 @@ const ChatBot = () => {
     return summary;
   };
 
-  // Process response text to find event suggestions
-  const processEventSuggestions = (text: string): MessagePart[] => {
-    if (!text) return [{ text, isHighlighted: false }];
+// Process response text to find event suggestions
+const processEventSuggestions = (text: string): MessagePart[] => {
+  if (!text) return [{ text, isHighlighted: false }];
+  
+  // Updated regex to match the new event suggestion format
+  const eventSuggestionRegex = /\[Title: ([^|]+)\s*\|\s*Date: ([^|]+)\s*\|\s*Start: ([^|]+)\s*\|\s*End: ([^|]+)\s*\|\s*Color: ([^|]+)\s*\|\s*Description: ([^|]+)\s*\|\s*Tags: ([^\]]+)\]/g;
+  
+  // Also detect existing events
+  const existingEventsHighlights = highlightEvents(text);
+  
+  // Combine both event detection mechanisms
+  let result: MessagePart[] = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = eventSuggestionRegex.exec(text)) !== null) {
+    // Get text before the match
+    const beforeText = text.substring(lastIndex, match.index);
     
-    // Regular expression to match suggested events in the format:
-    // [Title: Event Title | Date: YYYY-MM-DD | Start: HH:MM | End: HH:MM | Description: description here]
-    const eventSuggestionRegex = /\[Title: ([^|]+)\s*\|\s*Date: ([^|]+)\s*\|\s*Description: ([^\]]+)\]/g;
-    
-    // Also detect existing events
-    const existingEventsHighlights = highlightEvents(text);
-    
-    // Combine both event detection mechanisms
-    let result: MessagePart[] = [];
-    let lastIndex = 0;
-    let match;
-    
-    while ((match = eventSuggestionRegex.exec(text)) !== null) {
-      // Get text before the match
-      const beforeText = text.substring(lastIndex, match.index);
-      
-      // Process the text before the match for existing events
-      if (beforeText) {
-        const processedBeforeText = highlightEvents(beforeText);
-        result = [...result, ...processedBeforeText];
-      }
-      
-      // Add the suggested event as a special part
-      const suggestedEvent = {
-        title: match[1].trim(),
-        date: match[2].trim(),
-        description: match[3].trim()
-      };
-      
-      result.push({
-        text: match[0],
-        isHighlighted: true,
-        isEventSuggestion: true,
-        suggestedEvent,
-        color: '#4CAF50' // Green color for suggested events
-      });
-      
-      lastIndex = match.index + match[0].length;
+    // Process the text before the match for existing events
+    if (beforeText) {
+      const processedBeforeText = highlightEvents(beforeText);
+      result = [...result, ...processedBeforeText];
     }
     
-    // Process the remaining text for existing events
-    if (lastIndex < text.length) {
-      const remainingText = text.substring(lastIndex);
-      const processedRemainingText = highlightEvents(remainingText);
-      result = [...result, ...processedRemainingText];
-    }
+    // Add the suggested event as a special part with all new fields
+    const suggestedEvent = {
+      title: match[1].trim(),
+      date: match[2].trim(),
+      start: match[3].trim(),
+      end: match[4].trim(),
+      color: match[5].trim(),
+      description: match[6].trim(),
+      tags: match[7].trim().split(',').map(tag => ({ 
+        name: tag.trim(), 
+        color: '#FF0000' // Default color for tags
+      }))
+    };
     
-    return result;
-  };
+    result.push({
+      text: match[0],
+      isHighlighted: true,
+      isEventSuggestion: true,
+      suggestedEvent,
+      color: suggestedEvent.color || '#4CAF50' // Use the suggested color or fallback to green
+    });
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Process the remaining text for existing events
+  if (lastIndex < text.length) {
+    const remainingText = text.substring(lastIndex);
+    const processedRemainingText = highlightEvents(remainingText);
+    result = [...result, ...processedRemainingText];
+  }
+  
+  return result;
+};
 
   // Highlight event titles in message text
   const highlightEvents = (text: string): MessagePart[] => {
@@ -570,41 +606,59 @@ const ChatBot = () => {
   };
 
   // Create a new event based on suggestion
-const createEvent = async (suggestedEvent: any) => {
-  if (!userId) {
-    setError('User ID not available. Please log in again.');
-    return;
-  }
-  
-  setIsCreatingEvent(true);
-  setEventCreationSuccess(null);
-  
-  try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('Authentication token not found');
+  const createEvent = async (suggestedEvent: any) => {
+    if (!userId) {
+      setError('User ID not available. Please log in again.');
+      return;
     }
     
-    // Parse the date (assuming it's in YYYY-MM-DD format)
-    let eventDate = new Date(suggestedEvent.date);
+    setIsCreatingEvent(true);
+    setEventCreationSuccess(null);
     
-    // Prepare the event data according to the Prisma schema
-    const eventData = {
-      // No need to manually set id, Prisma will generate with @default(uuid())
-      userId: userId,
-      title: suggestedEvent.title,
-      date: eventDate.toISOString(), // Main date field
-      recurring: false,
-      color: suggestedEvent.color || newEventData.color || '#8CA7D6',
-      type: 'EVENT',
-      // Handle tags properly - must be connected, not created inline
-      tags: {
-        connect: suggestedEvent.tags?.map((tag: string) => ({ id: tag })) || []
-      },
-      description: suggestedEvent.description || ''
-    };
-
-    console.log('Creating event with data:', eventData);
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      // Parse the date (assuming it's in YYYY-MM-DD format)
+      let eventDate = new Date(suggestedEvent.date);
+      
+      // Format times to match API expectations
+      const startTime = suggestedEvent.start || 
+                 `${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+      
+      // Calculate start and end datetimes
+      const startDateTime = new Date(`${suggestedEvent.date}T${startTime}`);
+      const endDateTime = suggestedEvent.end
+                        ? new Date(`${suggestedEvent.date}T${suggestedEvent.end}`)
+                        : new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+      
+      // Process tags if available
+      const tagStrings = suggestedEvent.tags || [];
+      const tags = Array.isArray(tagStrings) 
+        ? tagStrings 
+        : typeof tagStrings === 'string'
+          ? tagStrings.split(',').map(tag => ({ name: tag.trim() }))
+          : [];
+      
+      // Prepare the event data according to the API expectations
+      const eventData = {
+        userId: userId,
+        calendarId: calendarId,
+        title: suggestedEvent.title,
+        date: startDateTime.toISOString(),
+        time: startTime,
+        recurring: "None",
+        color: suggestedEvent.color || newEventData.color || '#8CA7D6',
+        description: suggestedEvent.description || '',
+        endDate: endDateTime.toISOString(),
+        type: "EVENT",
+        reminder: "None",
+        tags: tags
+      };
+  
+      console.log('Creating event with data:', eventData);
     
     const response = await fetch(`/api/event/${userId}`, {
       method: 'POST',
@@ -745,16 +799,16 @@ const createEvent = async (suggestedEvent: any) => {
             return (
               <span
                 key={index}
-                className="relative block my-2 px-3 py-2 rounded border border-green-500 bg-green-50"
+                className="relative block my-2 px-3 py-2 rounded border border-[#7a96c4] bg-[#f0f4fb]"
               >
-                <div className="font-medium text-green-800 mb-1">Suggested Event:</div>
+                <div className="font-medium text-[#546d9d] mb-1">Suggested Event:</div>
                 <div className="text-gray-700 mb-2">
                   <strong>{part.suggestedEvent.title}</strong> on {part.suggestedEvent.date}
                 </div>
                 <div className="text-sm text-gray-600 mb-2">{part.suggestedEvent.description}</div>
                 <button
                   onClick={() => handleEventSuggestionClick(part.suggestedEvent)}
-                  className="text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50"
+                  className="text-white bg-[#7a96c4] hover:bg-[#6785b3] px-3 py-1 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#8CA7D6] disabled:opacity-50"
                   disabled={isCreatingEvent}
                 >
                   {isCreatingEvent ? "Creating..." : "Add to Calendar"}
@@ -762,7 +816,7 @@ const createEvent = async (suggestedEvent: any) => {
               </span>
             );
           }
-          
+
           // For existing events (highlight only)
           return (
             <span
@@ -794,7 +848,7 @@ const createEvent = async (suggestedEvent: any) => {
                   backgroundColor: part.color || '#e0e0e0',
                   padding: '1px 4px',
                   borderRadius: '3px',
-                  color: getContrastColor(part.color || '#e0e0e0'),
+                  color: '#ffffff', // Always use white text for highlighted events
                   fontWeight: 500,
                   whiteSpace: 'pre-wrap',
                   cursor: 'pointer' // Add pointer cursor to indicate it's interactive

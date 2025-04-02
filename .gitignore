@@ -1,4 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+todo.txt
 
 # dependencies
 /node_modules
@@ -42,4 +43,5 @@ next-env.d.ts
 
 # prisma
 /prisma/dev.db
-/prisma/migrations/*
+/prisma/dev.db-journal
+/prisma/migrations/

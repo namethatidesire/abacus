@@ -1,25 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Alert } from '@mui/material';
 import styles from './signup.module.css';
 
 const SignupPage = () => {
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [timezone, setTimezone] = useState('');
   const [message, setMessage] = useState('');
-
-  interface SignupFormData {
-    username: string;
-    email: string;
-    password: string;
-    timezone: string;
-  }
-
-  interface ErrorResponse {
-    message: string;
-  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,19 +22,13 @@ const SignupPage = () => {
       const response = await fetch(`http://localhost:3000/api/account/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username, 
-          email, 
-          password, 
-          timezone 
-        } as SignupFormData),
+        body: JSON.stringify({ username, email, password, timezone }),
       });
 
       if (response.status === 201) {
-        window.location.href = '/login';
+        router.push('/login'); // Use router.push instead of window.location
       } else {
-        const errorData: ErrorResponse = await response.json();
-        console.error('Error:', errorData);
+        const errorData = await response.json();
         setMessage(errorData.message);
       }
     } catch (error) {
@@ -92,10 +79,10 @@ const SignupPage = () => {
         </div>
         <button className={styles.button} type="submit">Sign Up</button>
         <p className={styles.link}>
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <Link href="/login">Login</Link>
         </p>
       </form>
-      {message && <p className={styles.message}>{message}</p>}
+      {message && <Alert severity="error">{message}</Alert>}
     </div>
   );
 };

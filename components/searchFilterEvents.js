@@ -9,7 +9,6 @@ import {
     TextField,
     Select,
     MenuItem,
-    Chip,
     InputLabel,
     FormControl,
     FormLabel,
@@ -20,6 +19,7 @@ import {
 import {CirclePicker} from "react-color";
 import dayjs from "dayjs";
 import { prisma } from "@/utils/db";
+import Tags from "./tags"; // Import the Tags component
 
 export default function SearchFilterEventDialog(accountId) {
     const [open, setOpen] = React.useState(false);
@@ -31,8 +31,7 @@ export default function SearchFilterEventDialog(accountId) {
     const [events, setEvents] = React.useState([]); // Add state for events
     //let accountId = props.accountId;
 
-    // Replace below line of code to fetch all of the logged in user's tags
-    const userTags = ['CSC301', 'Personal', 'Work'];
+    // Removed hardcoded userTags array
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -42,8 +41,8 @@ export default function SearchFilterEventDialog(accountId) {
         setOpen(false);
     };
 
-    const handleTagChange = (event) => {
-        setEventTags(event.target.value);
+    const handleTagChange = (newTags) => {
+        setEventTags(newTags);
     };
 
     const handleTypeChange = (event) => {
@@ -68,11 +67,19 @@ export default function SearchFilterEventDialog(accountId) {
                throw new Error('User ID not found in token');
              }
 
+             // Extract tag names for the API request
+             const tagNames = eventTags.map(tag => typeof tag === 'string' ? tag : tag.name);
+
              const response = await fetch(`http://localhost:3000/api/tag/search`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({"userId" : userId, "eventTitle" : eventTitle, "eventType" : eventType,
-               "eventTags" : eventTags, "filterOR" : filterOR }),
+               body: JSON.stringify({
+                 "userId": userId, 
+                 "eventTitle": eventTitle, 
+                 "eventType": eventType,
+                 "eventTags": tagNames, 
+                 "filterOR": filterOR 
+               }),
              });
 
              const foundEvents = await response.json();
@@ -119,29 +126,13 @@ export default function SearchFilterEventDialog(accountId) {
                     </Select>
                 </FormControl>
 
-                <FormControl fullWidth margin="dense">
-                    <InputLabel id="eventTagsLabel">Tags</InputLabel>
-                    <Select
-                        labelId="eventTagsLabel"
-                        id="eventTags"
-                        multiple
-                        value={eventTags}
+                {/* Replace hardcoded tags with the Tags component */}
+                <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+                    <Tags 
+                        value={eventTags} 
                         onChange={handleTagChange}
-                        renderValue={(selected) => (
-                            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                                {selected.map((value) => (
-                                    <Chip key={value} label={value} style={{ margin: 2 }} />
-                                ))}
-                            </div>
-                        )}
-                    >
-                        {userTags.map((tag) => (
-                            <MenuItem key={tag} value={tag}>
-                                {tag}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                    />
+                </div>
 
                 <FormControl>
                   <FormLabel id="filter-and-or-radio-buttons-group">Tag Filtering Behaviour</FormLabel>

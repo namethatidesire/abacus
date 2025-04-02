@@ -1,68 +1,81 @@
 .container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: #f9f9f9;
-  }
-  
-  .title {
-    color: black;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .label {
-    margin-bottom: 5px;
-    margin-right: 5px;
-    color: black;
-  }
-  
-  .input {
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    color: black;
-    background-color: white;
-  }
-  .button {
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    background-color: #0070f3;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  .button:hover {
-    background-color: #005bb5;
-  }
-  
-  .message {
-    text-align: center;
-    color: red;
-    margin-top: 10px;
-  }
-  
-  .signupLink {
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  .signupLinkText {
-    color: blue; /* Change this to your desired color */
-    text-decoration: underline;
-  }
-  
-  .signupLinkText:hover {
-    color: darkblue; /* Change this to your desired hover color */
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: #ffffff;
+}
+
+.title {
+  font-size: 2.5rem;
+  color: #1976d2;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.form {
+  width: 100%;
+  max-width: 400px;
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #212529;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+  background-color: #ffffff;
+  color: #212529;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1976d2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #1565c0;
+}
+
+.link {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: #212529;
+}
+
+.link a {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link a:hover {
+  text-decoration: underline;
+}

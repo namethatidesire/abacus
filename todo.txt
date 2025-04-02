@@ -1,0 +1,26 @@
+add authorization to api routes
+
+----- calendar page -----
+check if user is logged in:
+- not ==> redirect to login page
+- yes ==> check if the path includes a calendarId:
+	- no ==> redirect to default calendar
+	- yes ==> does the user have access to the calendar (check db):
+		- yes ==> render calendar as usual (at the given calendarId)
+		- no ==> render the user's default calendar
+
+add UI to manage calendars
+- switch calendar
+- modify calendar ==> name and description, colour?
+- delete calendar ==> add confirmation button
+- share calendar
+- at the top ==> button to add calendar
+
+share an existing event
+- option appears upon clicking an existing event
+- the event is shared by creating a new event for the importing-user with all of the same details as the event being shared
+	- the user can see the details of the event before importing it (incl. username of person who shared)
+
+
+todo:
+- fix tag search to isolate calendars

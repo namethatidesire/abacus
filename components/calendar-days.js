@@ -1,10 +1,9 @@
 "use client";
-import React from 'react';
-import ShowEventDialog from "./show-event-dialog";
+import React, { useState, useEffect } from 'react';
 import { Crimson_Pro } from 'next/font/google';
 import { Typography } from "@mui/material";
 import './calendar-days.css';
-import CreateEventDialog from './create-event-dialog';
+import ShowEventDialog from './show-event-dialog';
 
 // Initialize Crimson Pro font
 const crimsonPro = Crimson_Pro({
@@ -12,10 +11,24 @@ const crimsonPro = Crimson_Pro({
     weight: ['400', '500', '600'],
 });
 
+// Add this function before the CalendarDays component
+const checkEventOverlap = (event1, event2) => {
+    const start1 = new Date(`${event1.date}T${event1.time}`);
+    const end1 = event1.endDate ? new Date(event1.endDate) : new Date(start1.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+    
+    const start2 = new Date(`${event2.date}T${event2.time}`);
+    const end2 = event2.endDate ? new Date(event2.endDate) : new Date(start2.getTime() + 60 * 60 * 1000);
+
+    return start1 < end2 && end1 > start2;
+};
+
 function CalendarDays(props) {
     const firstDayOfMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 1);
     const weekdayOfFirstDay = firstDayOfMonth.getDay();
     let currentDays = [];
+
+    // Add state to track acknowledged conflicts
+    const [acknowledgedConflicts, setAcknowledgedConflicts] = useState({});
 
     // Get last month's days that should show
     const lastMonth = new Date(props.day.getFullYear(), props.day.getMonth(), 0);
@@ -68,84 +81,186 @@ function CalendarDays(props) {
         });
     }
 
+    // Function to handle conflict acknowledgment
+    const handleAcknowledgeConflict = (eventId, conflictingEventIds) => {
+        const conflictId = `conflict-${eventId}-${conflictingEventIds.join('-')}`;
+        
+        // Update local state
+        setAcknowledgedConflicts(prev => ({
+            ...prev,
+            [conflictId]: true
+        }));
+        
+        // Persist in localStorage
+        localStorage.setItem(conflictId, 'acknowledged');
+    };
+    
+    // Load previously acknowledged conflicts on mount
+    useEffect(() => {
+        // Check for any acknowledged conflicts in localStorage
+        const savedAcknowledgments = {};
+        
+        // Only scan for keys that start with 'conflict-'
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('conflict-') && localStorage.getItem(key) === 'acknowledged') {
+                savedAcknowledgments[key] = true;
+            }
+        }
+        
+        setAcknowledgedConflicts(savedAcknowledgments);
+    }, []);
+
+    const renderDayEvents = (dayEvents) => {
+        // Sort events by time
+        const sortedEvents = [...dayEvents].sort((a, b) => {
+            const timeA = new Date(`${a.date}T${a.time}`).getTime();
+            const timeB = new Date(`${b.date}T${b.time}`).getTime();
+            return timeA - timeB;
+        });
+
+        const visibleEvents = sortedEvents.slice(0, 2); // Limit to 2 events per day
+
+        return (
+            <div className="calendar-day-events">
+                {visibleEvents.map((event, eventIndex) => {
+                    const isHighlighted = props.highlightedEventId === event.id;
+                    const conflictingEvents = sortedEvents.filter(otherEvent => {
+                        if (otherEvent.id === event.id) return false;
+                        return checkEventOverlap(event, otherEvent);
+                    });
+                    
+                    const hasConflict = conflictingEvents.length > 0;
+                    const conflictId = hasConflict 
+                        ? `conflict-${event.id}-${conflictingEvents.map(e => e.id).join('-')}`
+                        : null;
+                    const isConflictAcknowledged = conflictId 
+                        ? acknowledgedConflicts[conflictId] || false
+                        : false;
+
+                    return (
+                        <ShowEventDialog
+                            key={eventIndex}
+                            event={event}
+                            accountId={props.accountId}
+                            updateCallback={props.updateCallback}
+                            hasConflict={hasConflict}
+                            conflictingEvents={conflictingEvents}
+                            onAcknowledgeConflict={() => {
+                                if (hasConflict) {
+                                    handleAcknowledgeConflict(
+                                        event.id, 
+                                        conflictingEvents.map(e => e.id)
+                                    );
+                                }
+                            }}
+                        >
+                            <div 
+                                className={`event${isHighlighted ? " highlighted-event" : ""}${hasConflict && !isConflictAcknowledged ? " conflict-event" : ""}`}
+                                style={{ 
+                                    backgroundColor: event.color,
+                                    boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 
+                                              (hasConflict && !isConflictAcknowledged) ? '0 0 4px 2px #ff000066' : 'none',
+                                    transform: isHighlighted ? 'scale(1.05)' : 'none',
+                                    zIndex: isHighlighted ? 10 : 'auto',
+                                    transition: 'none',
+                                    color: 'white',
+                                    fontWeight: hasConflict ? 600 : 400,
+                                    padding: '4px 8px',
+                                    borderRadius: '8px',
+                                    marginBottom: '4px',
+                                    fontSize: '0.8em',
+                                    cursor: 'pointer',
+                                    border: (hasConflict && !isConflictAcknowledged) ? '2px solid #ff0000' : 'none',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '8px' // Add gap between flex items
+                                }}
+                            >
+                                <span style={{ 
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flexGrow: 1,
+                                    minWidth: 0 // Required for text truncation to work in a flex container
+                                }}>
+                                    {event.title}
+                                </span>
+                                <span style={{ 
+                                    fontSize: '0.75em',
+                                    opacity: 0.9,
+                                    flexShrink: 0 // Prevents time from shrinking
+                                }}>
+                                    {new Date(`${event.date}T${event.time}`).toLocaleTimeString([], { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                                {hasConflict && !isConflictAcknowledged && 
+                                    <span style={{ 
+                                        marginLeft: '4px',
+                                        flexShrink: 0 // Prevents warning icon from shrinking
+                                    }}>⚠️</span>
+                                }
+                            </div>
+                        </ShowEventDialog>
+                    );
+                })}
+
+                {sortedEvents.length > 2 && (
+                    <Typography variant="caption" className="more-events">
+                        +{sortedEvents.length - 2} more
+                    </Typography>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="table-content">
             {currentDays.map((day, index) => {
                 const dateKey = day.date.toDateString();
                 const dayEvents = Array.isArray(props.events[dateKey]) ? props.events[dateKey] : [];
-                const visibleEvents = dayEvents.slice(0, 2); // Limit to 2 events per day
                 
                 return (
                     <div 
                         key={index} 
                         className={`calendar-day${day.currentMonth ? " current" : ""}${day.selected ? " selected" : ""}${day.today ? " today" : ""}`}
                         onClick={(e) => {
-                            e.stopPropagation(); // Prevent event bubbling
-                            props.changeCurrentDay(day);
-                            props.onCreateEvent(day.date);
+                            // Only handle empty space clicks
+                            if (e.target.classList.contains('calendar-day')) {
+                                e.stopPropagation();
+                                props.changeCurrentDay(day);
+                                props.onCreateEvent(day.date);
+                            }
                         }} 
-                        style={{ cursor: "pointer", textAlign: "right" }} // Make it look clickable and align to the right
+                        style={{ 
+                            cursor: "pointer", 
+                            display: "flex",
+                            flexDirection: "column"
+                        }}
                     >
-                        <Typography 
-                            variant="body2" 
-                            sx={{ 
-                                fontFamily: crimsonPro.style.fontFamily,
-                                color: day.currentMonth ? '#333' : '#999', // Darker color for current month, lighter for others
-                                marginLeft: "auto", // Align to the right
-                                fontSize: '1.em', // Increase font size for calendar dates
-                                fontWeight: 'bold', // Bold the date text
-                                ...(day.today && {
-                                    backgroundColor: '#8CA7D6',
-                                    borderRadius: '50%',
-                                    width: '1.5em',
-                                    height: '1.5em',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white',
-                                    marginBottom: '4px' // Add space below the circle
-                                })
-                            }}
-                        >
-                            {day.number}
-                        </Typography>
-                        
-                        {/* Render up to 2 events */}
-                        {visibleEvents.map((event, eventIndex) => {
-                            const isHighlighted = props.highlightedEventId === event.id;
-                            
-                            return (
-                                <div 
-                                    key={eventIndex} 
-                                    className={`event${isHighlighted ? " highlighted-event" : ""}`}
-                                    style={{ 
-                                        backgroundColor: event.color,
-                                        boxShadow: isHighlighted ? '0 0 8px 2px #FBE59D' : 'none',
-                                        transform: isHighlighted ? 'scale(1.05)' : 'none',
-                                        zIndex: isHighlighted ? 10 : 'auto',
-                                        transition: 'none', // Remove transition
-                                        color: 'white',
-                                        fontWeight: 400,
-                                        padding: '4px 8px',
-                                        borderRadius: '8px',
-                                        marginBottom: '4px',
-                                        textAlign: 'center',
-                                        fontSize: '0.8em' // Increase font size for events
-                                    }}
-                                >
-                                    <ShowEventDialog event={event} accountId={props.accountId} updateCallback={props.updateCallback}>
-                                        {event.title}
-                                    </ShowEventDialog>
-                                </div>
-                            );
-                        })}
-
-                        {/* Display "+X more" if there are hidden events */}
-                        {dayEvents.length > 2 && (
-                            <Typography variant="caption" className="more-events">
-                                +{dayEvents.length - 2} more
+                        <div className="calendar-day-number">
+                            <Typography 
+                                variant="body2" 
+                                className={`day-number${day.today ? " is-today" : ""}`}
+                                sx={{ 
+                                    fontFamily: crimsonPro.style.fontFamily,
+                                    color: day.currentMonth ? '#333' : '#999',
+                                    fontSize: '1.em',
+                                    fontWeight: 'bold',
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    props.changeCurrentDay(day);
+                                }}
+                            >
+                                {day.number}
                             </Typography>
-                        )}
+                        </div>
+                        {renderDayEvents(dayEvents)}
                     </div>
                 );
             })}

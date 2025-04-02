@@ -11,18 +11,46 @@ import { BaseEventDialog } from "./base-event-dialog";
 // selectedDate: date object for pre-populating the event date
 export default function CreateEventDialog(props) {
     const accountId = props.accountId;
+    const calendarId = props.calendarId;
     const open = props.open || false;
     
     const [eventData, setEventData] = React.useState({
         title: '',
+        userId: accountId,
         color: '#FF0000',
         startDateTime: props.selectedDate ? dayjs(props.selectedDate) : dayjs(),
         endDateTime: props.selectedDate ? dayjs(props.selectedDate).add(1, 'hour') : dayjs().add(1, 'hour'),
         description: '',
         recurring: 'None',
         reminder: 'None',
-        tags: []
+        type: "EVENT",
+        tags: [],
+        difficulty: null,
+        expectedTime: null,
+        completionTime: null,
+        task: false,
+        completed: false
     });
+
+    const resetEventData = () => {
+        setEventData({
+            title: '',
+            userId: accountId,
+            color: '#FF0000',
+            startDateTime: dayjs(),
+            endDateTime: dayjs().add(1, 'hour'),
+            description: '',
+            recurring: 'None',
+            reminder: 'None',
+            type: "EVENT",
+            tags: [],
+            difficulty: null,
+            expectedTime: null,
+            completionTime: null,
+            task: false,
+            completed: false
+        });
+    }
 
     React.useEffect(() => {
         if (props.selectedDate) {
@@ -35,6 +63,7 @@ export default function CreateEventDialog(props) {
     }, [props.selectedDate]);
 
     const handleClose = () => {
+        resetEventData();
         if (props.onClose) {
             props.onClose();
         }
@@ -44,6 +73,7 @@ export default function CreateEventDialog(props) {
     const createEvent = async () => {
         const newEvent = {
             userId: accountId,
+            calendarId: calendarId,
             title: eventData.title,
             date: eventData.startDateTime.toISOString(),
             time: eventData.startDateTime.format('HH:mm'),
@@ -51,9 +81,14 @@ export default function CreateEventDialog(props) {
             color: eventData.color,
             description: eventData.description,
             endDate: eventData.endDateTime.toISOString(),
-            type: "EVENT",
+            type: eventData.type,
             reminder: eventData.reminder,
             tags: eventData.tags,
+            expectedTime: eventData.expectedTime !== null ? parseInt(eventData.expectedTime) : null,
+            completionTime: eventData.completionTime !== null ? parseInt(eventData.completionTime) : null,
+            difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
+            task: eventData.task,
+            completed: eventData.completed
         };
 
         try {

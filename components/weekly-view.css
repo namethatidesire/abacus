@@ -1,0 +1,137 @@
+.weekly-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    background: white;
+    border: 1px solid #E5E5E5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.weekly-header {
+    display: grid;
+    grid-template-columns: 90px repeat(7, 1fr);
+    border-bottom: 1px solid #E5E5E5;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.time-header {
+    width: 90px;
+    border-right: 1px solid #E5E5E5;
+}
+
+.day-header {
+    padding: 12px;
+    text-align: center;
+    border-right: 1px solid #E5E5E5;
+}
+
+.day-header.today {
+    background-color: #f0f4f9;
+}
+
+.day-header.today h6 {
+    color: #8CA7D6;
+    font-weight: 600;
+}
+
+.day-header.today .MuiTypography-subtitle1 {
+    color: #8CA7D6;
+    font-weight: 600;
+}
+
+.weekly-content {
+    display: flex;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.time-column {
+    width: 90px;
+    flex-shrink: 0;
+    border-right: 1px solid #E5E5E5;
+    background: white;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.time-slot {
+    height: 60px;
+    padding: 4px 8px;
+    text-align: right;
+    border-bottom: 1px solid #E5E5E5;
+    color: #666;
+}
+
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    flex: 1;
+    position: relative;
+}
+
+.day-column {
+    position: relative;
+    border-right: 1px solid #E5E5E5;
+    min-width: 150px;
+    overflow: visible; /* Allow events to overflow */
+}
+
+.time-grid-line {
+    height: 60px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.time-grid-line:hover {
+    background-color: rgba(140, 167, 214, 0.1);
+}
+
+.week-event {
+    position: absolute;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 1rem; /* Increased from 0.8rem */
+    color: white;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    /* Apply font family via CSS variable set by next/font */
+    font-family: var(--font-crimson-pro);
+}
+
+.week-event .event-title {
+    font-weight: 600; /* Increased from 500 for better visibility */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 16px;
+    font-size: 1.1em;
+    line-height: 1.3; /* Slightly increased for better readability */
+    color: white; /* Explicitly setting color for weekly view */
+}
+
+.week-event .event-time {
+    font-size: 1em; /* Increased from 0.75em */
+    opacity: 0.95; /* Increased from 0.9 for better visibility */
+    line-height: 1.3; /* Slightly increased for better readability */
+    color: white; /* Explicitly setting color for weekly view */
+}
+
+.week-event:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 100 !important; /* Ensure hovered event is always on top */
+    opacity: 1 !important; /* Full opacity on hover */
+}
+
+.conflict-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.8em;
+}

@@ -8,13 +8,20 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
     const [open, setOpen] = React.useState(false);
     const [eventData, setEventData] = React.useState({
         title: event.title,
+        userId: accountId,
         color: event.color,
         startDateTime: dayjs(event.date + event.time),
         endDateTime: dayjs(event.endDate),
         description: event.description,
         recurring: event.recurring,
         reminder: event.reminder || 'None',
-        tags: event.tags
+        type: event.type,
+        tags: event.tags,
+        expectedTime: event.expectedTime !== null ? parseInt(event.expectedTime) : null,
+        completionTime: event.completionTime !== null ? parseInt(event.completionTime) : null,
+        difficulty: event.difficulty !== null ? event.difficulty : null,
+        task: event.task,
+        completed: event.completed
     });
 
     const updateEvent = async () => {
@@ -28,11 +35,16 @@ export default function UpdateEventDialog({ event, accountId, callback }) {
             color: eventData.color,
             description: eventData.description,
             endDate: eventData.endDateTime.toISOString(),
-            type: "EVENT",
+            type: eventData.type,
             reminder: eventData.reminder,
             tags: eventData.tags,
+            expectedTime: eventData.expectedTime !== null ? parseInt(eventData.expectedTime) : null,
+            completionTime: eventData.completionTime !== null ? parseInt(eventData.completionTime) : null,
+            difficulty: eventData.difficulty !== null ? eventData.difficulty : null,
+            task: eventData.task,
+            completed: eventData.completed
         };
-
+        console.log(updatedEvent)
         try {
             const response = await fetch(`api/event/${accountId}`, {
                 method: 'PUT',

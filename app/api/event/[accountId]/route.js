@@ -4,11 +4,11 @@ import { NextResponse } from "next/server";
 // create event
 export async function POST(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, endDate, type, tags, reminder } = await request.json();
+    const { userId, calendarId, title, date, recurring, color, type, tags, description, task, expectedTime, completionTime, difficulty, endDate, reminder } = await request.json();
     const event = await prisma.event.create({
       data: {
-        id,
         userId,
+        calendarId,
         title,
         date,
         recurring,
@@ -24,12 +24,16 @@ export async function POST(request) {
           }))
         },
         description,
+        task,
+        expectedTime,
+        completionTime,
+        difficulty, // Add difficulty difficulty // Add difficulty
         endDate,
         reminder
       }
     });
     
-    return NextResponse.json(event, { status: 201 });
+    return NextResponse.json({ event }, { status: 201 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });
@@ -39,7 +43,7 @@ export async function POST(request) {
 // update event
 export async function PUT(request) {
   try {
-    const { id, userId, title, date, recurring, color, description, start, end, type, tags, reminder } = await request.json();
+    const {id, userId, title, date, recurring, color, type, tags, description, task, completed, expectedTime, completionTime, difficulty, endDate, reminder } = await request.json();
     const event = await prisma.event.update({
       where: {
         id
@@ -52,6 +56,7 @@ export async function PUT(request) {
         color,
         type,
         tags: {
+          set: [],
           connectOrCreate: tags.map(tag => ({
             where: { name: tag.name || tag },
             create: {
@@ -61,13 +66,17 @@ export async function PUT(request) {
           }))
         },
         description,
-        start,
-        end,
+        endDate,
+        task,
+        completed,
+        expectedTime,
+        completionTime,
+        difficulty, // Add difficulty
         reminder
       }
     });
     
-    return NextResponse.json(event, { status: 200 });
+    return NextResponse.json({ event }, { status: 200 });
   } catch (error) {
     console.error(error.stack);
     return NextResponse.json({ message: "An error occurred" }, { status: 500 });
@@ -86,7 +95,7 @@ export async function GET(request, { params }) {
           }
 		});
 
-		return NextResponse.json(events, { status: 200 });
+		return NextResponse.json({ events }, { status: 200 });
 	} catch (error) {
 		console.error(error.stack);
 		return NextResponse.json({ message: "An error occurred" }, { status: 500 });
